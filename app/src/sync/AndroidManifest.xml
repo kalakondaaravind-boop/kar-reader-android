@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!--
+        The "KAR READER Sync" build only: direct Wi-Fi sync between your own devices needs these.
+        Sockets are bound to the local network; nothing is sent to the internet.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="replace" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+</manifest>

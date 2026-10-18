@@ -3,11 +3,24 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!--
-        KAR READER is offline-only. It deliberately declares NO network permissions
-        (no INTERNET, no ACCESS_NETWORK_STATE). The OS therefore blocks every socket the
-        app or its WebView could open. Documents are accessed through the Storage Access
-        Framework, which needs no storage permissions.
+        KAR READER (standard build) is offline-only. It declares no network permission, and any network
+        permission a library tries to merge in (for example ML Kit's usage logging) is removed below,
+        so Android blocks every connection the app or its WebView could open.
+        Only the separate "sync" build adds INTERNET back, for direct Wi-Fi sync (src/sync/AndroidManifest.xml).
     -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+
+    <!-- Camera: only used while scanning a page. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <!-- App lock with fingerprint, face or device credential. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
+    <!-- Focus sessions can turn on Do Not Disturb, after the user grants access in system settings. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
     <application
         android:name=".KarReaderApp"
@@ -25,7 +38,9 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.KarReader">
             <intent-filter>
@@ -33,5 +48,51 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.share"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <receiver
+            android:name=".widget.ContinueReadingWidgetReceiver"
+            android:exported="true"
+            android:label="Continue reading">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_continue_reading" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.ReadingGoalWidgetReceiver"
+            android:exported="true"
+            android:label="Reading goal">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_reading_goal" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.FlashcardsDueWidgetReceiver"
+            android:exported="true"
+            android:label="Flashcards due">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_flashcards" />
+        </receiver>
     </application>
 </manifest>

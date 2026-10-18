@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">KAR READER</string>
+    <string name="widget_continue_description">Resume the book you were reading</string>
+    <string name="widget_goal_description">Minutes read today against your goal</string>
+    <string name="widget_flashcards_description">Flashcards due for review</string>
 </resources>

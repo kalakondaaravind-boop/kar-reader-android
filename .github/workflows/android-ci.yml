@@ -37,20 +37,32 @@ jobs:
         run: chmod +x gradlew
 
       - name: Assemble debug APK
-        run: ./gradlew --stacktrace assembleDebug
+        run: ./gradlew --stacktrace assembleStandardDebug assembleSyncDebug
+
+      - name: Verify the standard build has no network permission
+        run: |
+          AAPT=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)aapt
+          STD=$(ls app/build/outputs/apk/standard/debug/*.apk)
+          SYNC=$(ls app/build/outputs/apk/sync/debug/*.apk)
+          echo "Standard build permissions:"; $AAPT dump permissions "$STD"
+          echo "Sync build permissions:"; $AAPT dump permissions "$SYNC"
+          if $AAPT dump permissions "$STD" | grep -E "android.permission.(INTERNET|ACCESS_NETWORK_STATE)"; then
+            echo "::error::The standard (offline) build must not request network permissions"; exit 1
+          fi
+          $AAPT dump permissions "$SYNC" | grep -q "android.permission.INTERNET" || { echo "::error::Sync build is missing INTERNET"; exit 1; }
 
       - name: Unit tests
-        run: ./gradlew --stacktrace testDebugUnitTest
+        run: ./gradlew --stacktrace testStandardDebugUnitTest
 
       - name: Lint
-        run: ./gradlew --stacktrace lintDebug
+        run: ./gradlew --stacktrace lintStandardDebug lintSyncDebug
 
       - name: Upload debug APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: KAR-READER-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/*/debug/*.apk
           if-no-files-found: error
 
       - name: Upload test and lint reports
