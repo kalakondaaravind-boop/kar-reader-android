@@ -23,7 +23,7 @@ No accounts, ads, tracking or uploads. The standard build has **no network permi
 
 **Transcribe**
 - Record or import audio (MP3, M4A, WAV, OGG, FLAC, AMR, MP4 audio) and get a transcript with each voice labelled Speaker 1, 2, 3….
-- Runs entirely on the device: pyannote segmentation and 3D-Speaker voice embeddings tell speakers apart; multilingual Whisper base writes the words (99 languages, automatic detection).
+- Runs entirely on the device: pyannote segmentation and 3D-Speaker voice embeddings tell speakers apart; Whisper base writes English and Omnilingual ASR writes Hindi and Hinglish (automatic), or any of 1600+ languages chosen by hand. Hindi can be shown in Devanagari or Roman letters.
 - Rename or merge speakers, correct lines, play from any line, mark moments while recording; export TXT, Markdown, SRT or PDF; save as a note linked to a book.
 
 **Habits**

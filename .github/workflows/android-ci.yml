@@ -86,7 +86,7 @@ jobs:
           ls app/build/outputs/apk/*/debug/*.apk >/dev/null 2>&1 || exit 0
           for f in app/build/outputs/apk/*/debug/*.apk; do echo "::notice title=$(basename $f)::$(du -m "$f" | cut -f1) MB"; done
           BT=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)
-          "${BT}aapt" list -v app/build/outputs/apk/standard/debug/*.apk | awk '$NF ~ /^(assets\/models|lib\/)/ {printf "%s %.0f MB\n", $NF, $1/1048576}' | sort -k2 -n -r | head -12 \
+          "${BT}aapt" list -v app/build/outputs/apk/standard/debug/*.apk | awk '$NF ~ /^(assets\/models|lib\/)/ {printf "%s %.0f MB\n", $NF, $1/1048576}' | sort -k2 -n -r | awk 'NR<=12' \
             | while read -r line; do echo "::notice title=APK content::$line"; done
 
       - name: Lint
@@ -183,11 +183,11 @@ jobs:
         if: always()
         run: |
           # One annotation per test run (GitHub keeps only 10 notices per step).
-          sed -E 's/^.*KarSpeechTest: //' speech-report.txt 2>/dev/null | grep '^\[' | head -9 | while IFS= read -r line; do
+          sed -E 's/^.*KarSpeechTest: //' speech-report.txt 2>/dev/null | grep '^\[' | awk 'NR<=9' | while IFS= read -r line; do
             msg="${line//'%'/'%25'}"; echo "::notice title=Speech test::${msg:0:1900}"
           done
           if [ -s crash-log.txt ]; then
-            grep -v '^-----' crash-log.txt | head -40 | while IFS= read -r line; do msg="${line//'%'/'%25'}"; echo "::error title=Crash::${msg:0:900}"; done
+            grep -v '^-----' crash-log.txt | awk 'NR<=40' | while IFS= read -r line; do msg="${line//'%'/'%25'}"; echo "::error title=Crash::${msg:0:900}"; done
           fi
           python3 - <<'PY'
           import glob, xml.etree.ElementTree as ET
@@ -200,7 +200,7 @@ jobs:
                       detail = (bad.get('message') or '') + ' ' + (bad.text or '')[:1500]
                       print(f"::error title=Failed {case.get('name')}::" + detail.replace('%', '%25').replace('\n', '%0A')[:3000])
           PY
-          find app/build/outputs -path '*androidTest*' -name '*.xml' | head -5 | while read -r f; do echo "::notice title=Result file::$f"; done
-          grep -hE "^e: |What went wrong|FAILED|Exception|expected" build-output.txt device-test.txt 2>/dev/null | grep -v "^build-output.txt:.*warning" | awk '!seen[$0]++' | head -40 | while IFS= read -r line; do echo "::error::${line:0:900}"; done
+          find app/build/outputs -path '*androidTest*' -name '*.xml' | awk 'NR<=5' | while read -r f; do echo "::notice title=Result file::$f"; done
+          grep -hE "^e: |What went wrong|FAILED|Exception|expected" build-output.txt device-test.txt 2>/dev/null | awk '!seen[$0]++ && n++<40' | while IFS= read -r line; do echo "::error::${line:0:900}"; done
           [ ! -f device-test-failed ]
 

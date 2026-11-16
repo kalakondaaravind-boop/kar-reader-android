@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 — development build
+- Automatic transcription recognizes English, Hindi and Hinglish; each piece is routed by language
+  (Whisper base for English, Omnilingual ASR for Hindi/Hinglish). Other languages only when chosen by hand.
+- Hindi can be shown and exported in Devanagari or Roman letters.
+- Omnilingual ASR's stray Urdu letters in Hindi are converted to Devanagari.
+- Tried and dropped: a Hindi fine-tune of Whisper small (its published ONNX export drops syllables).
+
 ## 0.3.1 — development build
 - Fixed: crash after stopping a recording (the speech engine's progress callback is incompatible with Kotlin 2 lambdas).
 - The speech pipeline is tested on an Android emulator in CI with a two-speaker recording.
