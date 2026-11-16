@@ -182,6 +182,8 @@ jobs:
       - name: Report results
         if: always()
         run: |
+          # Reporting must not fail on its own (an empty grep returns 1); the last line decides pass or fail.
+          set +e +o pipefail
           # One annotation per test run (GitHub keeps only 10 notices per step).
           sed -E 's/^.*KarSpeechTest: //' speech-report.txt 2>/dev/null | grep '^\[' | awk 'NR<=9' | while IFS= read -r line; do
             msg="${line//'%'/'%25'}"; echo "::notice title=Speech test::${msg:0:1900}"
@@ -202,5 +204,6 @@ jobs:
           PY
           find app/build/outputs -path '*androidTest*' -name '*.xml' | awk 'NR<=5' | while read -r f; do echo "::notice title=Result file::$f"; done
           grep -hE "^e: |What went wrong|FAILED|Exception|expected" build-output.txt device-test.txt 2>/dev/null | awk '!seen[$0]++ && n++<40' | while IFS= read -r line; do echo "::error::${line:0:900}"; done
-          [ ! -f device-test-failed ]
+          if [ -f device-test-failed ]; then echo "::error::Device tests failed"; exit 1; fi
+          exit 0
 
