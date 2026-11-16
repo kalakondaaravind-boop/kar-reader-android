@@ -16,7 +16,7 @@ jobs:
         with:
           path: .speech-cache
           key: speech-${{ hashFiles('gradle/libs.versions.toml', 'scripts/fetch-speech-models.sh', 'scripts/speech-models.sha256') }}
-      - run: chmod +x gradlew scripts/*.sh && ./scripts/fetch-speech-models.sh && ./gradlew kspStandardDebugKotlin
+      - run: chmod +x gradlew scripts/*.sh && ./scripts/fetch-speech-models.sh && ./gradlew kspStandardDebugKotlin --no-build-cache --rerun-tasks
       - name: Commit exported schema
         run: |
           git config user.name "github-actions[bot]"
