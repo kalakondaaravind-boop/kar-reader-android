@@ -112,19 +112,19 @@ fun LanguagePicker(language: String, onLanguage: (String) -> Unit) {
         Text("Language", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Box {
             OutlinedButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(if (language.isBlank()) "Detect automatically" else WhisperLanguages.name(language), Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(if (language.isBlank()) "Automatic: English, Hindi, Hinglish" else WhisperLanguages.name(language), Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }, modifier = Modifier.heightIn(max = 420.dp)) {
-                DropdownMenuItem(text = { Text("Detect automatically", fontWeight = FontWeight.SemiBold) }, onClick = { onLanguage(""); open = false })
+                DropdownMenuItem(text = { Text("Automatic: English, Hindi, Hinglish", fontWeight = FontWeight.SemiBold) }, onClick = { onLanguage(""); open = false })
                 WhisperLanguages.all.forEach { (code, name) ->
                     DropdownMenuItem(text = { Text(name) }, onClick = { onLanguage(code); open = false })
                 }
             }
         }
         Text(
-            "English, Hindi and Hinglish each use a model made for them; other languages use a model for 1600+ languages. " +
-                "Hinglish works best on Automatic or Hindi.",
+            "Automatic recognizes English, Hindi and Hinglish. For any other language, pick it here: it is then " +
+                "transcribed with a model for 1600+ languages.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

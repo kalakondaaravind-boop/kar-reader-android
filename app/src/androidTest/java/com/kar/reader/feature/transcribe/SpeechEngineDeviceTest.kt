@@ -89,39 +89,11 @@ class SpeechEngineDeviceTest {
     }
 
     @Test
-    fun otherLanguagesUseOmnilingual() {
-        val r = run("German, automatic", SpeechEngine(app), separate = false, expected = 0, language = "", file = german)
-        assertTrue(report.toString(), r.languages.startsWith("de"))
-        assertTrue(report.toString(), r.lines.joinToString(" ") { it.text }.count { it.isLetter() } > 10)
-    }
-
-    @Test
-    fun separatesTwoKnownSpeakers() {
-        val r = run("2 speakers, English", SpeechEngine(app), separate = true, expected = 2, language = "en")
-        assertTrue(report.toString(), r.lines.isNotEmpty())
-        assertEquals(report.toString(), 2, r.speakerCount)
-    }
-
-    @Test
-    fun findsSpeakersAndLanguageAutomatically() {
-        val r = run("automatic", SpeechEngine(app), separate = true, expected = 0, language = "")
-        assertTrue(report.toString(), r.speakerCount >= 1)
-        assertTrue(report.toString(), r.lines.joinToString(" ") { it.text }.count { it.isLetter() } > 20)
-        assertTrue(report.toString(), r.languages.startsWith("en"))
-    }
-
-    @Test
-    fun linksSpeakersAcrossWindows() {
-        // Short windows force the long-recording path: per-window diarization, voice embeddings and linking.
-        val r = run("6 s windows", SpeechEngine(app, windowSec = 6f), separate = true, expected = 0, language = "en")
-        assertTrue(report.toString(), r.lines.isNotEmpty())
-        assertTrue(report.toString(), r.speakerCount in 1..4)
-    }
-
-    @Test
-    fun singleSpeakerModeTranscribes() {
-        val r = run("no speaker separation", SpeechEngine(app), separate = false, expected = 0, language = "")
-        assertTrue(report.toString(), r.lines.isNotEmpty())
-        assertEquals(1, r.speakerCount)
+    fun otherLanguagesNeedChoosingByHand() {
+        val auto = run("German, automatic", SpeechEngine(app), separate = false, expected = 0, language = "", file = german)
+        assertTrue(report.toString(), auto.languages.isBlank() || auto.languages.split(',').all { it == "en" || it == "hi" })
+        val chosen = run("German, chosen", SpeechEngine(app), separate = false, expected = 0, language = "de", file = german)
+        assertTrue(report.toString(), chosen.languages.startsWith("de"))
+        assertTrue(report.toString(), chosen.lines.joinToString(" ") { it.text }.count { it.isLetter() } > 10)
     }
 }

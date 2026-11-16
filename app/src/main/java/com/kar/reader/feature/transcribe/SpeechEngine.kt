@@ -98,7 +98,8 @@ class SpeechEngine(private val context: Context, private val windowSec: Float = 
         fun step() { done++; onProgress(Stage.WORDS, done.toFloat() / totalWork.coerceAtLeast(1)) }
 
         val languages: List<String> = if (auto) {
-            val detected = identifyLanguages(reader, chunks, isCancelled) { step() }
+            // Automatic mode: English, Hindi or Hinglish only. Other languages are transcribed only when chosen by hand.
+            val detected = identifyLanguages(reader, chunks, isCancelled) { step() }.map { LanguageRouting.automatic(it) }
             LanguageRouting.smooth(chunks, detected)
         } else List(chunks.size) { chosen }
         val routes = languages.map { LanguageRouting.route(it, hasHindi, hasOmni) }

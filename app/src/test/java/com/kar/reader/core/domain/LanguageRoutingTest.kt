@@ -15,6 +15,22 @@ class LanguageRoutingTest {
     }
 
     @Test
+    fun automaticModeIsEnglishOrHindiOnly() {
+        assertEquals("hi", LanguageRouting.automatic("hi"))
+        assertEquals("hi", LanguageRouting.automatic("ur"))
+        assertEquals("hi", LanguageRouting.automatic("mr"))
+        assertEquals("en", LanguageRouting.automatic("en"))
+        assertEquals("en", LanguageRouting.automatic("de"))
+        assertEquals("en", LanguageRouting.automatic("cy"))
+        assertEquals("", LanguageRouting.automatic(""))
+        // So automatic mode never reaches Omnilingual.
+        listOf("hi", "ur", "de", "te", "fr").forEach { code ->
+            val r = LanguageRouting.route(LanguageRouting.automatic(code), hasHindi = true, hasOmnilingual = true).recognizer
+            assertEquals(code, true, r == Recognizer.ENGLISH || r == Recognizer.HINDI)
+        }
+    }
+
+    @Test
     fun fallsBackToWhisperBaseWhenModelsAreMissing() {
         assertEquals(Route(Recognizer.WHISPER_BASE, "hi"), LanguageRouting.route("hi", false, false))
         assertEquals(Route(Recognizer.WHISPER_BASE, "de"), LanguageRouting.route("de", true, false))

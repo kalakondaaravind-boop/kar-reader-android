@@ -6,7 +6,8 @@ package com.kar.reader.core.domain
  * - English → Whisper base (punctuation and casing).
  * - Hindi and Hinglish → a Whisper small fine-tuned on Hindi (Devanagari). Whisper's language identifier often
  *   labels spoken Hindi as Urdu (the spoken languages are close), so Urdu is routed here too.
- * - Everything else → Omnilingual ASR (1600+ languages; lowercase, no punctuation).
+ * - Everything else → Omnilingual ASR (1600+ languages; lowercase, no punctuation), only when the user picks that
+ *   language by hand. Automatic mode recognizes English, Hindi and Hinglish only (see [automatic]).
  * When a model is missing from the build, Whisper base is used with the language set.
  */
 enum class Recognizer { ENGLISH, HINDI, OMNILINGUAL, WHISPER_BASE }
@@ -14,6 +15,19 @@ enum class Recognizer { ENGLISH, HINDI, OMNILINGUAL, WHISPER_BASE }
 data class Route(val recognizer: Recognizer, val whisperLanguage: String)
 
 object LanguageRouting {
+
+    /** Spoken languages Whisper may report for Hindi or Hinglish speech (close relatives and neighbours). */
+    private val HINDI_LIKE = setOf("hi", "ur", "ne", "mr", "pa", "sa", "sd", "gu", "bn", "as")
+
+    /**
+     * Automatic mode only distinguishes English from Hindi/Hinglish: a guess of a Hindi-like language becomes "hi",
+     * any other guess becomes "en", and no guess stays "" (filled in by [smooth]).
+     */
+    fun automatic(detected: String): String = when {
+        detected.isBlank() -> ""
+        detected in HINDI_LIKE -> "hi"
+        else -> "en"
+    }
 
     fun route(language: String, hasHindi: Boolean, hasOmnilingual: Boolean): Route = when {
         language == "en" -> Route(Recognizer.ENGLISH, "en")
