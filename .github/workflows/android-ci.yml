@@ -13,6 +13,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# 'bash' (unlike the default) runs with -o pipefail, so `gradlew … | tee` fails when Gradle fails.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     name: Build, lint and unit tests
@@ -64,6 +69,7 @@ jobs:
         run: ./gradlew testStandardDebugUnitTest 2>&1 | tee -a build-output.txt
 
       - name: Summarize tests and APK contents
+        if: always()
         run: |
           python3 - <<'PY'
           import glob, xml.etree.ElementTree as ET
@@ -71,8 +77,13 @@ jobs:
           for f in glob.glob('app/build/test-results/testStandardDebugUnitTest/*.xml'):
               r = ET.parse(f).getroot(); t = int(r.get('tests')); x = int(r.get('failures')) + int(r.get('errors')); s = int(r.get('skipped'))
               total += t; fail += x; suites.append(f"{r.get('name').split('.')[-1]} {t - x - s}/{t}")
+              for case in r.iter('testcase'):
+                  for bad in list(case.iter('failure')) + list(case.iter('error')):
+                      detail = (bad.get('message') or '') + ' ' + (bad.text or '')[:700]
+                      print(f"::error title=Failed {case.get('name')}::" + detail.replace('%', '%25').replace('\n', '%0A')[:1800])
           print(f"::notice title=Unit tests::{total} tests, {fail} failed: " + ", ".join(sorted(suites)))
           PY
+          ls app/build/outputs/apk/*/debug/*.apk >/dev/null 2>&1 || exit 0
           for f in app/build/outputs/apk/*/debug/*.apk; do echo "::notice title=$(basename $f)::$(du -m "$f" | cut -f1) MB"; done
           BT=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)
           "${BT}aapt" list -v app/build/outputs/apk/standard/debug/*.apk | awk '$NF ~ /^(assets\/models|lib\/)/ {printf "%s %.0f MB\n", $NF, $1/1048576}' | sort -k2 -n -r | head -12 \

@@ -19,8 +19,8 @@ android {
         versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
-        // The speech engine ships native libraries; phones and tablets are ARM, x86_64 covers emulators and Chromebooks.
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+        // The speech engine ships large native libraries; phones and tablets are ARM (64- and 32-bit).
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     // Release signing comes only from environment variables set by the release workflow. No key or password is

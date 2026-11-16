@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+# 'bash' (unlike the default) runs with -o pipefail, so `gradlew … | tee` fails when Gradle fails.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   release:
     name: Build and publish release APKs
