@@ -54,14 +54,25 @@ class SpeechEngineDeviceTest {
 
     private val app get() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    private fun run(label: String, engine: SpeechEngine, separate: Boolean, expected: Int, language: String, file: File = wav): EngineResult {
+    private fun run(label: String, engine: SpeechEngine, separate: Boolean, expected: Int, language: String, file: File = wav, route: com.kar.reader.core.domain.Route? = null): EngineResult {
         val started = System.currentTimeMillis()
-        val r = engine.transcribe(file, separate, expected, language, { _, _ -> }, { false })
-        report.appendLine("[$label] ${System.currentTimeMillis() - started} ms, speakers=${r.speakerCount}, languages=${r.languages}")
-        r.lines.forEach { report.appendLine("  S${it.speaker + 1} ${it.startMs}-${it.endMs}: ${it.text}") }
+        val r = engine.transcribe(file, separate, expected, language, { _, _ -> }, { false }, route)
+        val block = StringBuilder()
+        block.append("[$label] ${System.currentTimeMillis() - started} ms, speakers=${r.speakerCount}, languages=${r.languages}")
+        r.lines.forEach { block.append(" | S${it.speaker + 1} ${it.startMs / 1000.0}s: ${it.text}") }
+        report.appendLine(block)
         File(app.filesDir, "speech-test-report.txt").writeText(report.toString())
-        report.toString().lines().takeLast(r.lines.size + 1).forEach { Log.i("KarSpeechTest", it) }
+        Log.i("KarSpeechTest", block.toString())
         return r
+    }
+
+    @Test
+    fun hindiClipThroughEveryModel() {
+        // Diagnostic: the same Hindi clip through each recognizer, to judge the models against each other.
+        val R = com.kar.reader.core.domain.Recognizer
+        run("Hindi via Hindi Whisper", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(R.HINDI, "hi"))
+        run("Hindi via Whisper base", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(R.WHISPER_BASE, "hi"))
+        run("Hindi via Omnilingual", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(R.OMNILINGUAL, ""))
     }
 
     @Test

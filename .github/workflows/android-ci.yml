@@ -182,8 +182,9 @@ jobs:
       - name: Report results
         if: always()
         run: |
-          sed -E 's/^.*KarSpeechTest: //' speech-report.txt 2>/dev/null | grep -v '^-----' | head -60 | while IFS= read -r line; do
-            msg="${line//'%'/'%25'}"; echo "::notice title=Speech test::${msg:0:900}"
+          # One annotation per test run (GitHub keeps only 10 notices per step).
+          sed -E 's/^.*KarSpeechTest: //' speech-report.txt 2>/dev/null | grep '^\[' | head -9 | while IFS= read -r line; do
+            msg="${line//'%'/'%25'}"; echo "::notice title=Speech test::${msg:0:1900}"
           done
           if [ -s crash-log.txt ]; then
             grep -v '^-----' crash-log.txt | head -40 | while IFS= read -r line; do msg="${line//'%'/'%25'}"; echo "::error title=Crash::${msg:0:900}"; done
@@ -192,7 +193,8 @@ jobs:
           import glob, xml.etree.ElementTree as ET
           for f in glob.glob('app/build/outputs/androidTest-results/**/*.xml', recursive=True) + glob.glob('app/build/test-results/**/connected*/**/*.xml', recursive=True):
               r = ET.parse(f).getroot()
-              print(f"::notice title=Device tests::{r.get('tests')} tests, {r.get('failures')} failures, {r.get('errors')} errors")
+              names = ", ".join(c.get('name') for c in r.iter('testcase'))
+              print(f"::notice title=Device tests::{r.get('tests')} tests, {r.get('failures')} failures, {r.get('errors')} errors: {names}")
               for case in r.iter('testcase'):
                   for bad in list(case.iter('failure')) + list(case.iter('error')):
                       detail = (bad.get('message') or '') + ' ' + (bad.text or '')[:1500]

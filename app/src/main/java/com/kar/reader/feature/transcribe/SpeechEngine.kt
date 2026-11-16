@@ -82,6 +82,8 @@ class SpeechEngine(private val context: Context, private val windowSec: Float = 
         language: String,
         onProgress: (Stage, Float) -> Unit,
         isCancelled: () -> Boolean,
+        /** Tests only: send every piece to this recognizer. */
+        forceRoute: Route? = null,
     ): EngineResult = WavReader(wav).use { reader ->
         val total = reader.durationSec
         val spans = if (separateSpeakers && total > 1f) diarize(reader, total, expectedSpeakers, onProgress, isCancelled) else TranscriptPlanner.singleSpeaker(total)
@@ -102,7 +104,7 @@ class SpeechEngine(private val context: Context, private val windowSec: Float = 
             val detected = identifyLanguages(reader, chunks, isCancelled) { step() }.map { LanguageRouting.automatic(it) }
             LanguageRouting.smooth(chunks, detected)
         } else List(chunks.size) { chosen }
-        val routes = languages.map { LanguageRouting.route(it, hasHindi, hasOmni) }
+        val routes = languages.map { forceRoute ?: LanguageRouting.route(it, hasHindi, hasOmni) }
 
         val texts = arrayOfNulls<String>(chunks.size)
         // One recognizer in memory at a time: group the pieces by recognizer.
