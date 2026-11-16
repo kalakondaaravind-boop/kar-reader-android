@@ -20,6 +20,7 @@ import com.kar.reader.data.db.ProgressDao
 import com.kar.reader.data.db.ReaderPreferencesDao
 import com.kar.reader.data.db.SessionDao
 import com.kar.reader.data.db.TagDao
+import com.kar.reader.data.db.TranscriptDao
 import com.kar.reader.data.db.VocabularyDao
 import dagger.Module
 import dagger.Provides
@@ -49,6 +50,7 @@ object DataModule {
     }
 
     @Provides fun profileDao(db: KarDatabase): ProfileDao = db.profileDao()
+    @Provides fun transcriptDao(db: KarDatabase): TranscriptDao = db.transcriptDao()
     @Provides fun bookDao(db: KarDatabase): BookDao = db.bookDao()
     @Provides fun bookStateDao(db: KarDatabase): BookStateDao = db.bookStateDao()
     @Provides fun progressDao(db: KarDatabase): ProgressDao = db.progressDao()

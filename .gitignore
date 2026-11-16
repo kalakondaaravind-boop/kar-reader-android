@@ -15,3 +15,7 @@
 keystore.properties
 # Never commit user documents
 /test-documents/
+# Speech engine and models are downloaded at build time (scripts/fetch-speech-models.sh)
+/app/libs/
+/app/src/main/assets/models/
+/.speech-cache/

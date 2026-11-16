@@ -1,5 +1,6 @@
 package com.kar.reader.data.db
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 
@@ -8,6 +9,8 @@ import androidx.room.RoomDatabase
  * future version ships an explicit, tested migration. No destructive fallback is configured.
  *
  * Version 1 is the first released schema (0.1.0 was never distributed, so it needs no migration).
+ * Version 2 adds transcripts; it only creates new tables, so Room generates the migration from the exported
+ * schemas (app/schemas) and MigrationTest checks it.
  */
 @Database(
     entities = [
@@ -33,9 +36,14 @@ import androidx.room.RoomDatabase
         NotebookEntity::class,
         NotebookPageEntity::class,
         NotebookStrokeEntity::class,
+        TranscriptEntity::class,
+        TranscriptSegmentEntity::class,
+        TranscriptSpeakerEntity::class,
+        TranscriptMarkEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 abstract class KarDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
@@ -56,6 +64,7 @@ abstract class KarDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
     abstract fun pageTextDao(): PageTextDao
     abstract fun notebookDao(): NotebookDao
+    abstract fun transcriptDao(): TranscriptDao
 
     companion object {
         const val NAME = "kar_reader.db"

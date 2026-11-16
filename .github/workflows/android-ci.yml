@@ -36,6 +36,15 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      - name: Cache speech engine and models
+        uses: actions/cache@v4
+        with:
+          path: .speech-cache
+          key: speech-${{ hashFiles('gradle/libs.versions.toml', 'scripts/fetch-speech-models.sh', 'scripts/speech-models.sha256') }}
+
+      - name: Download speech engine and models
+        run: ./scripts/fetch-speech-models.sh
+
       - name: Assemble debug APK
         run: ./gradlew assembleStandardDebug assembleSyncDebug 2>&1 | tee -a build-output.txt
 
@@ -82,6 +91,8 @@ jobs:
           name: KAR-READER-debug-apk
           path: app/build/outputs/apk/*/debug/*.apk
           if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
 
       - name: Upload test and lint reports
         if: always()

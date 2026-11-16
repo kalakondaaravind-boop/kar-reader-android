@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Timer
@@ -131,6 +132,7 @@ fun HomeScreen(
     onOpenReview: () -> Unit,
     onStartFocus: () -> Unit,
     onOpenStats: () -> Unit,
+    onTranscribe: () -> Unit,
     vm: HomeViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -179,7 +181,7 @@ fun HomeScreen(
             }
         }
 
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), maxItemsInEachRow = 3) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), maxItemsInEachRow = 2) {
             GlassCard(Modifier.weight(1f).widthIn(min = 220.dp), onClick = onOpenStats) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
@@ -201,6 +203,16 @@ fun HomeScreen(
                     Column {
                         Text("${state.cardsDue} flashcards due", fontWeight = FontWeight.SemiBold)
                         Text(if (state.cardsDue == 0) "All caught up" else "Made from your highlights", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            GlassCard(Modifier.weight(1f).widthIn(min = 220.dp), onClick = onTranscribe) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Mic, contentDescription = null, tint = KarColors.Red, modifier = Modifier.size(40.dp))
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text("Transcribe", fontWeight = FontWeight.SemiBold)
+                        Text("Lectures and meetings · speakers labelled", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

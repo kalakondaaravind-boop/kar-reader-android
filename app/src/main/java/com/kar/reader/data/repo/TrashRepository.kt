@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class BinKind(val label: String) { BOOK("Book"), NOTE("Note"), HIGHLIGHT("Highlight"), BOOKMARK("Bookmark"), INK("Ink"), NOTEBOOK("Notebook"), WORD("Word") }
+enum class BinKind(val label: String) { BOOK("Book"), NOTE("Note"), HIGHLIGHT("Highlight"), BOOKMARK("Bookmark"), INK("Ink"), NOTEBOOK("Notebook"), WORD("Word"), TRANSCRIPT("Transcript") }
 
 data class BinItem(val kind: BinKind, val id: String, val title: String, val detail: String, val deletedAt: Long) {
     fun daysLeft(now: Long): Int = TrashPolicy.daysLeft(deletedAt, now)
@@ -35,6 +35,7 @@ class TrashRepository @Inject constructor(
     private val library: LibraryRepository,
     private val annotations: AnnotationRepository,
     private val flashcards: FlashcardRepository,
+    private val transcripts: TranscriptRepository,
 ) {
 
     fun observeBin(profileId: String): Flow<List<BinItem>> {
@@ -54,9 +55,11 @@ class TrashRepository @Inject constructor(
             inkDao.observeDeleted(profileId),
             notebookDao.observeDeleted(profileId),
             vocabDao.observeDeleted(profileId),
-        ) { items, ink, notebooks, words ->
+            transcripts.observeDeleted(profileId),
+        ) { items, ink, notebooks, words, recordings ->
             (
                 items +
+                    recordings.map { BinItem(BinKind.TRANSCRIPT, it.id, it.title, "Transcript and its recording", it.deletedAt ?: 0) } +
                     ink.map { BinItem(BinKind.INK, it.id, "Ink stroke", "Page ${it.pageIndex + 1}", it.deletedAt ?: 0) } +
                     notebooks.map { BinItem(BinKind.NOTEBOOK, it.id, it.title, "Notebook", it.deletedAt ?: 0) } +
                     words.map { BinItem(BinKind.WORD, it.id, it.word, "Saved word", it.deletedAt ?: 0) }
@@ -74,6 +77,7 @@ class TrashRepository @Inject constructor(
             BinKind.INK -> annotations.restoreInk(item.id)
             BinKind.NOTEBOOK -> notebookDao.restore(item.id, now)
             BinKind.WORD -> flashcards.restoreWord(item.id)
+            BinKind.TRANSCRIPT -> transcripts.restore(item.id)
         }
     }
 
@@ -94,6 +98,7 @@ class TrashRepository @Inject constructor(
         count += notebookDao.purgeStrokes(cutoff)
         count += vocabDao.purge(cutoff)
         flashcardDao.purge(cutoff)
+        count += transcripts.purge(cutoff)
         return count
     }
 }

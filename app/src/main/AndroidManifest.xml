@@ -16,6 +16,16 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
+    <!-- Transcription: the microphone only while recording; a foreground service keeps recording and
+         on-device transcription running with the screen off, with a visible notification. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- App lock with fingerprint, face or device credential. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
@@ -32,6 +42,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.KarReader"
+        android:largeHeap="true"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="35">
 
@@ -48,6 +59,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".feature.transcribe.TranscribeService"
+            android:exported="false"
+            android:foregroundServiceType="microphone|dataSync|mediaProcessing" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

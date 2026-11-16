@@ -39,10 +39,11 @@ class PrivacyFacts @Inject constructor(
         val books = db.bookDao().getActive()
         PrivacyReport(
             hasNetworkPermission = network,
-            permissions = requested.map { describe(it) }.sortedBy { it.label },
+            permissions = requested.map { describe(it) }.distinctBy { it.label }.sortedBy { it.label },
             storage = listOf(
                 StorageFact("Books and documents", "App storage on this device · ${books.size} files", size(store.libraryDir), false),
                 StorageFact("Notes, highlights, bookmarks, progress", "Local database", context.getDatabasePath(KarDatabase.NAME).let { dbFileSize(it) }, false),
+                StorageFact("Recordings for transcripts", "App storage on this device · never uploaded", size(store.recordingsDir), false),
                 StorageFact("Cover images", "Cache · rebuilt automatically", size(store.coversDir), true),
                 StorageFact("Temporary files", "Cache · cleared automatically", size(context.cacheDir), true),
                 StorageFact("Backups", "Only where you choose to save them", null, false),
@@ -64,6 +65,10 @@ class PrivacyFacts @Inject constructor(
 
     private fun describe(p: String): PermissionFact = when (p) {
         "android.permission.CAMERA" -> PermissionFact(p, "Camera", "Only while you scan a page")
+        "android.permission.RECORD_AUDIO" -> PermissionFact(p, "Microphone", "Only while you record for a transcript")
+        "android.permission.POST_NOTIFICATIONS" -> PermissionFact(p, "Notifications", "Shows recording and transcription progress")
+        "android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_MICROPHONE", "android.permission.FOREGROUND_SERVICE_DATA_SYNC", "android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING" ->
+            PermissionFact(p, "Keep working in the background", "Lets recording and transcription continue with the screen off")
         "android.permission.USE_BIOMETRIC" -> PermissionFact(p, "Biometrics", "Only to unlock the app or private books")
         "android.permission.ACCESS_NOTIFICATION_POLICY" -> PermissionFact(p, "Do Not Disturb", "Only during focus sessions, if you allow it")
         "android.permission.INTERNET" -> PermissionFact(p, "Network", "Direct Wi-Fi sync between your devices (Sync build)")

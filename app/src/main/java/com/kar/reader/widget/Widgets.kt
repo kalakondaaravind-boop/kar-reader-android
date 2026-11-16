@@ -63,6 +63,7 @@ object DeepLinks {
     const val DEST_REVIEW = "review"
     const val DEST_FOCUS = "focus"
     const val DEST_STATS = "stats"
+    const val DEST_TRANSCRIBE = "transcribe"
 
     fun intent(context: Context, bookId: String? = null, destination: String? = null): Intent =
         Intent(context, MainActivity::class.java).apply {

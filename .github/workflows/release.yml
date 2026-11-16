@@ -1,0 +1,118 @@
+name: Release
+
+# Publishes a GitHub Release with installable APKs when a version tag (v*) is pushed.
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release APKs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Cache speech engine and models
+        uses: actions/cache@v4
+        with:
+          path: .speech-cache
+          key: speech-${{ hashFiles('gradle/libs.versions.toml', 'scripts/fetch-speech-models.sh', 'scripts/speech-models.sha256') }}
+
+      - name: Download speech engine and models
+        run: chmod +x gradlew scripts/*.sh && ./scripts/fetch-speech-models.sh
+
+      - name: Prepare signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.KAR_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KAR_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KAR_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KAR_KEY_PASSWORD }}
+        run: |
+          KS="$RUNNER_TEMP/release.jks"
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$KS"
+            echo "KAR_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "::add-mask::$KEYSTORE_PASSWORD"; echo "::add-mask::$KEY_PASSWORD"
+            echo "KAR_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "KAR_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "KAR_SIGNING=permanent" >> "$GITHUB_ENV"
+          else
+            # No permanent key configured: sign with a key made for this release only (it is not kept).
+            PW=$(openssl rand -hex 24); echo "::add-mask::$PW"
+            keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias preview -keyalg RSA -keysize 3072 -validity 3650 \
+              -storepass "$PW" -keypass "$PW" -dname "CN=KAR READER preview" >/dev/null 2>&1
+            echo "KAR_KEY_ALIAS=preview" >> "$GITHUB_ENV"
+            echo "KAR_KEYSTORE_PASSWORD=$PW" >> "$GITHUB_ENV"
+            echo "KAR_KEY_PASSWORD=$PW" >> "$GITHUB_ENV"
+            echo "KAR_SIGNING=preview" >> "$GITHUB_ENV"
+          fi
+          echo "KAR_KEYSTORE_FILE=$KS" >> "$GITHUB_ENV"
+
+      - name: Build release APKs
+        run: ./gradlew assembleStandardRelease assembleSyncRelease testStandardDebugUnitTest 2>&1 | tee build-output.txt
+
+      - name: Verify permissions and signatures
+        run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)
+          STD=$(ls app/build/outputs/apk/standard/release/*.apk)
+          SYNC=$(ls app/build/outputs/apk/sync/release/*.apk)
+          if "${BT}aapt" dump permissions "$STD" | grep -E "android.permission.(INTERNET|ACCESS_NETWORK_STATE)"; then
+            echo "::error::The standard (offline) build must not request network permissions"; exit 1
+          fi
+          "${BT}aapt" dump permissions "$SYNC" | grep -q "android.permission.INTERNET" || { echo "::error::Sync build is missing INTERNET"; exit 1; }
+          "${BT}apksigner" verify --print-certs "$STD" | head -3
+          "${BT}apksigner" verify "$SYNC"
+          "${BT}aapt" list "$STD" | grep -q "assets/models/whisper/encoder.int8.onnx" || { echo "::error::Speech models missing from the APK"; exit 1; }
+
+      - name: Collect files
+        run: |
+          V=${GITHUB_REF_NAME#v}
+          mkdir -p dist
+          cp app/build/outputs/apk/standard/release/*.apk "dist/KAR-READER-$V.apk"
+          cp app/build/outputs/apk/sync/release/*.apk "dist/KAR-READER-Sync-$V.apk"
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+          ls -l dist; cat dist/SHA256SUMS.txt
+          for f in dist/*.apk; do echo "::notice title=$(basename $f)::$(du -m "$f" | cut -f1) MB"; done
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=${GITHUB_REF_NAME#v}
+          NOTES=docs/releases/$GITHUB_REF_NAME.md
+          [ -f "$NOTES" ] || NOTES=/dev/null
+          {
+            cat "$NOTES"
+            echo
+            if [ "$KAR_SIGNING" = "preview" ]; then
+              echo "> **Signing:** this preview is signed with a one-off key. A later release signed with the permanent key"
+              echo "> cannot install over it: back up first (Settings › Backup), uninstall, install the new version, then restore."
+            fi
+            echo
+            echo "SHA-256:"; echo '```'; cat dist/SHA256SUMS.txt; echo '```'
+          } > release-notes.md
+          gh release create "$GITHUB_REF_NAME" dist/* --title "KAR READER $V (development build)" --notes-file release-notes.md --prerelease
+
+      - name: Report build errors as annotations
+        if: failure()
+        run: |
+          touch build-output.txt
+          grep -E "^e: |: Error: |FAILED$|> Task .* FAILED|What went wrong|Caused by|Exception" build-output.txt \
+            | sed -E 's#/home/runner/work/[^/]+/[^/]+/##' | awk '!seen[$0]++' | head -40 \
+            | while IFS= read -r line; do msg="${line//'%'/'%25'}"; echo "::error::${msg:0:900}"; done

@@ -86,6 +86,9 @@ import com.kar.reader.ui.settings.SyncScreen
 import com.kar.reader.ui.share.QuoteCardScreen
 import com.kar.reader.ui.stats.FocusScreen
 import com.kar.reader.ui.stats.StatsScreen
+import com.kar.reader.ui.transcribe.RecordingScreen
+import com.kar.reader.ui.transcribe.TranscriptScreen
+import com.kar.reader.ui.transcribe.TranscriptsScreen
 import com.kar.reader.widget.DeepLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -119,12 +122,16 @@ object Routes {
     const val READING_SETTINGS = "reading-settings"
     const val SCAN = "scan"
     const val CALIBRE = "calibre"
+    const val TRANSCRIPTS = "transcripts"
+    const val TRANSCRIPT = "transcript/{transcriptId}"
+    const val RECORDING = "recording"
 
     fun reader(bookId: String) = "reader/$bookId"
     fun collection(id: String?) = if (id == null) "collection" else "collection?id=$id"
     fun note(id: String) = "note/$id"
     fun notebook(id: String) = "notebook/$id"
     fun quote(highlightId: String) = "quote/$highlightId"
+    fun transcript(id: String) = "transcript/$id"
 }
 
 private data class TopLevel(val route: String, val label: String, val icon: ImageVector)
@@ -175,6 +182,7 @@ private fun MainNavigation(activity: FragmentActivity, settings: AppSettings, de
             l.destination == DeepLinks.DEST_REVIEW -> nav.navigateTop(Routes.REVIEW)
             l.destination == DeepLinks.DEST_STATS -> nav.navigateTop(Routes.STATS)
             l.destination == DeepLinks.DEST_FOCUS -> nav.navigate(Routes.FOCUS)
+            l.destination == DeepLinks.DEST_TRANSCRIBE -> nav.navigate(Routes.TRANSCRIPTS) { launchSingleTop = true }
         }
     }
 
@@ -211,6 +219,7 @@ private fun MainNavigation(activity: FragmentActivity, settings: AppSettings, de
                     onOpenReview = { nav.navigateTop(Routes.REVIEW) },
                     onStartFocus = { nav.navigate(Routes.FOCUS) },
                     onOpenStats = { nav.navigateTop(Routes.STATS) },
+                    onTranscribe = { nav.navigate(Routes.TRANSCRIPTS) },
                 )
             }
             composable(Routes.LIBRARY) {
@@ -257,6 +266,22 @@ private fun MainNavigation(activity: FragmentActivity, settings: AppSettings, de
             composable(Routes.READING_SETTINGS) { ReadingSettingsScreen(onBack = back) }
             composable(Routes.SCAN) { ScanScreen(onBack = back, onSaved = { id -> nav.popBackStack(); nav.navigate(Routes.reader(id)) }) }
             composable(Routes.CALIBRE) { CalibreImportScreen(onBack = back) }
+            composable(Routes.TRANSCRIPTS) {
+                TranscriptsScreen(
+                    onBack = back,
+                    onOpenTranscript = { nav.navigate(Routes.transcript(it)) },
+                    onOpenRecording = { nav.navigate(Routes.RECORDING) { launchSingleTop = true } },
+                )
+            }
+            composable(Routes.RECORDING) {
+                RecordingScreen(
+                    onClose = back,
+                    onStopped = { id -> nav.popBackStack(); nav.navigate(Routes.transcript(id)) },
+                )
+            }
+            composable(Routes.TRANSCRIPT, arguments = listOf(navArgument("transcriptId") { type = NavType.StringType })) {
+                TranscriptScreen(onBack = back, onOpenNote = { nav.navigate(Routes.note(it)) })
+            }
         }
     }
 }

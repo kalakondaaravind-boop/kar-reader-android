@@ -15,10 +15,26 @@ android {
         applicationId = "com.kar.reader"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+        // The speech engine ships native libraries; phones and tablets are ARM, x86_64 covers emulators and Chromebooks.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+    }
+
+    // Release signing comes only from environment variables set by the release workflow. No key or password is
+    // ever committed; without them, release builds are produced unsigned.
+    val releaseKeystore = System.getenv("KAR_KEYSTORE_FILE")
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("KAR_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KAR_KEY_ALIAS")
+                keyPassword = System.getenv("KAR_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -27,13 +43,15 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // Code shrinking stays off until a shrunk build has been checked on a device: R8 can strip classes used
+            // through reflection or JNI (serialization, Room, the speech engine) and that only shows at run time.
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // No signing config is committed. Release signing is configured locally or via CI secrets.
+            if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -65,6 +83,15 @@ android {
     }
     packaging {
         resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+        jniLibs { useLegacyPackaging = false }
+    }
+    androidResources {
+        // Speech models are read straight from the APK; storing them uncompressed avoids inflating ~200 MB at start.
+        noCompress += listOf("onnx", "txt")
+    }
+    sourceSets {
+        // Room's exported schemas, for the migration test.
+        getByName("test").assets.srcDir("$projectDir/schemas")
     }
     lint {
         abortOnError = true
@@ -129,10 +156,17 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.documentfile)
     implementation(libs.mlkit.text.recognition)
+    // On-device speech recognition and speaker diarization (sherpa-onnx, Apache-2.0). The AAR is downloaded by
+    // scripts/fetch-speech-models.sh, pinned by version and checksum; it is not committed.
+    implementation(files("libs/sherpa-onnx-${libs.versions.sherpaOnnx.get()}.aar"))
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.org.json)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.room.testing)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)

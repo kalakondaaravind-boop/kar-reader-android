@@ -5,6 +5,7 @@ import com.kar.reader.data.files.DocumentStore
 import com.kar.reader.data.repo.ProfileRepository
 import com.kar.reader.data.repo.TrashRepository
 import com.kar.reader.di.AppScope
+import com.kar.reader.feature.transcribe.TranscriptionManager
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,8 @@ class KarReaderApp : Application() {
     @Inject lateinit var store: DocumentStore
     @Inject lateinit var trash: TrashRepository
     @Inject @AppScope lateinit var scope: CoroutineScope
+    // Created at start so recordings or transcriptions interrupted by process death are recovered right away.
+    @Inject lateinit var transcription: TranscriptionManager
 
     override fun onCreate() {
         super.onCreate()

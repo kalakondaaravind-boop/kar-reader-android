@@ -13,6 +13,7 @@ import javax.inject.Singleton
  *
  *  files/library/<bookId>.<ext>   imported documents (never modified after import)
  *  files/covers/<bookId>.png      generated cover thumbnails (rebuildable)
+ *  files/recordings/<id>.wav    transcription audio (16 kHz mono), kept until its transcript is purged from the bin
  *  files/staging/<jobId>/         in-flight imports; anything here at startup is an interrupted job
  *  cache/export/                  temporary export output before it is copied to the user's chosen file
  */
@@ -23,6 +24,9 @@ class DocumentStore @Inject constructor(@ApplicationContext private val context:
     val coversDir: File get() = File(context.filesDir, "covers").apply { mkdirs() }
     private val stagingRoot: File get() = File(context.filesDir, "staging").apply { mkdirs() }
     val exportDir: File get() = File(context.cacheDir, "export").apply { mkdirs() }
+    val recordingsDir: File get() = File(context.filesDir, "recordings").apply { mkdirs() }
+
+    fun recordingFile(name: String): File = File(recordingsDir, File(name).name)
 
     fun libraryFile(storedFileName: String): File = File(libraryDir, storedFileName)
 

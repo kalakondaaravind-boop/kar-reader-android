@@ -109,6 +109,7 @@ class PrivacyViewModel @Inject constructor(
             db.clearAllTables()
             store.libraryDir.deleteRecursively()
             store.coversDir.deleteRecursively()
+            store.recordingsDir.deleteRecursively()
             store.cleanInterruptedStaging()
             store.exportDir.deleteRecursively()
             prefs.clearAll()
