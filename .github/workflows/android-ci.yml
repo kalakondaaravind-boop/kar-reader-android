@@ -201,6 +201,6 @@ jobs:
                       print(f"::error title=Failed {case.get('name')}::" + detail.replace('%', '%25').replace('\n', '%0A')[:3000])
           PY
           find app/build/outputs -path '*androidTest*' -name '*.xml' | head -5 | while read -r f; do echo "::notice title=Result file::$f"; done
-          grep -E "^e: |What went wrong|FAILED|Exception|Error|expected|Tests on" build-output.txt device-test.txt 2>/dev/null | grep -v "^build-output.txt:.*warning" | awk '!seen[$0]++' | head -40 | while IFS= read -r line; do echo "::error::${line:0:900}"; done
+          grep -hE "^e: |What went wrong|FAILED|Exception|expected" build-output.txt device-test.txt 2>/dev/null | grep -v "^build-output.txt:.*warning" | awk '!seen[$0]++' | head -40 | while IFS= read -r line; do echo "::error::${line:0:900}"; done
           [ ! -f device-test-failed ]
 

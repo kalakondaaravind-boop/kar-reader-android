@@ -69,10 +69,9 @@ class SpeechEngineDeviceTest {
     @Test
     fun hindiClipThroughEveryModel() {
         // Diagnostic: the same Hindi clip through each recognizer, to judge the models against each other.
-        val R = com.kar.reader.core.domain.Recognizer
-        run("Hindi via Hindi Whisper", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(R.HINDI, "hi"))
-        run("Hindi via Whisper base", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(R.WHISPER_BASE, "hi"))
-        run("Hindi via Omnilingual", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(R.OMNILINGUAL, ""))
+        run("Hindi via Hindi Whisper", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(com.kar.reader.core.domain.Recognizer.HINDI, "hi"))
+        run("Hindi via Whisper base", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(com.kar.reader.core.domain.Recognizer.WHISPER_BASE, "hi"))
+        run("Hindi via Omnilingual", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(com.kar.reader.core.domain.Recognizer.OMNILINGUAL, ""))
     }
 
     @Test
