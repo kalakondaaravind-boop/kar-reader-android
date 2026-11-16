@@ -1,7 +1,10 @@
 name: Release
 
-# Publishes a GitHub Release with installable APKs when a version tag (v*) is pushed.
+# Builds installable APKs and attaches them to a GitHub Release: when a release is published, or when a
+# version tag (v*) is pushed (the release is then created).
 on:
+  release:
+    types: [ published ]
   push:
     tags: [ 'v*' ]
 
@@ -95,7 +98,7 @@ jobs:
           ls -l dist; cat dist/SHA256SUMS.txt
           for f in dist/*.apk; do echo "::notice title=$(basename $f)::$(du -m "$f" | cut -f1) MB"; done
 
-      - name: Publish GitHub Release
+      - name: Publish to the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -112,7 +115,12 @@ jobs:
             echo
             echo "SHA-256:"; echo '```'; cat dist/SHA256SUMS.txt; echo '```'
           } > release-notes.md
-          gh release create "$GITHUB_REF_NAME" dist/* --title "KAR READER $V (development build)" --notes-file release-notes.md --prerelease
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+            gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --title "KAR READER $V (development build)" --notes-file release-notes.md --prerelease
+          fi
 
       - name: Report build errors as annotations
         if: failure()
