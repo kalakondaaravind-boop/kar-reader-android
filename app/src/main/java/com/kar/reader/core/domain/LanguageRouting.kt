@@ -4,13 +4,13 @@ package com.kar.reader.core.domain
  * Which on-device recognizer writes each piece of a transcript.
  *
  * - English → Whisper base (punctuation and casing).
- * - Hindi and Hinglish → a Whisper small fine-tuned on Hindi (Devanagari). Whisper's language identifier often
- *   labels spoken Hindi as Urdu (the spoken languages are close), so Urdu is routed here too.
- * - Everything else → Omnilingual ASR (1600+ languages; lowercase, no punctuation), only when the user picks that
+ * - Hindi and Hinglish → Omnilingual ASR, which wrote Hindi far better than Whisper base in testing (Whisper base
+ *   writes Hindi in Urdu script). Its stray Urdu letters are fixed by [DevanagariCleanup].
+ * - Other languages → Omnilingual ASR (1600+ languages; lowercase, no punctuation), only when the user picks that
  *   language by hand. Automatic mode recognizes English, Hindi and Hinglish only (see [automatic]).
  * When a model is missing from the build, Whisper base is used with the language set.
  */
-enum class Recognizer { ENGLISH, HINDI, OMNILINGUAL, WHISPER_BASE }
+enum class Recognizer { ENGLISH, OMNILINGUAL, WHISPER_BASE }
 
 data class Route(val recognizer: Recognizer, val whisperLanguage: String)
 
@@ -29,11 +29,10 @@ object LanguageRouting {
         else -> "en"
     }
 
-    fun route(language: String, hasHindi: Boolean, hasOmnilingual: Boolean): Route = when {
+    fun route(language: String, hasOmnilingual: Boolean): Route = when {
         language == "en" -> Route(Recognizer.ENGLISH, "en")
-        (language == "hi" || language == "ur") && hasHindi -> Route(Recognizer.HINDI, "hi")
         hasOmnilingual -> Route(Recognizer.OMNILINGUAL, "")
-        else -> Route(Recognizer.WHISPER_BASE, language)
+        else -> Route(Recognizer.WHISPER_BASE, if (language == "ur") "hi" else language)
     }
 
     /**

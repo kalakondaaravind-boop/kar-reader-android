@@ -16,6 +16,7 @@ import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractorConfig
 import com.k2fsa.sherpa.onnx.SpokenLanguageIdentification
 import com.k2fsa.sherpa.onnx.SpokenLanguageIdentificationConfig
 import com.k2fsa.sherpa.onnx.SpokenLanguageIdentificationWhisperConfig
+import com.kar.reader.core.domain.DevanagariCleanup
 import com.kar.reader.core.domain.LanguageRouting
 import com.kar.reader.core.domain.QuietCut
 import com.kar.reader.core.domain.Recognizer
@@ -40,17 +41,11 @@ object SpeechModels {
     const val WHISPER_ENCODER = "models/whisper/encoder.int8.onnx"
     const val WHISPER_DECODER = "models/whisper/decoder.int8.onnx"
     const val WHISPER_TOKENS = "models/whisper/tokens.txt"
-    const val HINDI_ENCODER = "models/whisper-hi/encoder.int8.onnx"
-    const val HINDI_DECODER = "models/whisper-hi/decoder.int8.onnx"
-    const val HINDI_TOKENS = "models/whisper-hi/tokens.txt"
     const val OMNI_MODEL = "models/omnilingual/model.int8.onnx"
     const val OMNI_TOKENS = "models/omnilingual/tokens.txt"
     /** Describes the bundled models for the About and privacy screens. */
-    const val DESCRIPTION = "Whisper base (English and language identification) · Whisper small fine-tuned for Hindi · " +
-        "Omnilingual ASR 300M (other languages) · pyannote segmentation 3.0 · 3D-Speaker ERes2Net embeddings"
-
-    fun hasHindi(context: Context): Boolean =
-        runCatching { context.assets.list("models/whisper-hi").orEmpty().toSet().containsAll(listOf("encoder.int8.onnx", "decoder.int8.onnx", "tokens.txt")) }.getOrDefault(false)
+    const val DESCRIPTION = "Whisper base (English and language identification) · Omnilingual ASR 300M (Hindi, Hinglish and " +
+        "other languages) · pyannote segmentation 3.0 · 3D-Speaker ERes2Net embeddings"
 
     fun hasOmnilingual(context: Context): Boolean =
         runCatching { context.assets.list("models/omnilingual").orEmpty().toSet().containsAll(listOf("model.int8.onnx", "tokens.txt")) }.getOrDefault(false)
@@ -90,7 +85,6 @@ class SpeechEngine(private val context: Context, private val windowSec: Float = 
         check(isCancelled)
         val chunks = TranscriptPlanner.plan(spans) { ideal, earliest, latest -> quietMoment(reader, total, ideal, earliest, latest) }
         onProgress(Stage.WORDS, 0f)
-        val hasHindi = SpeechModels.hasHindi(context)
         val hasOmni = SpeechModels.hasOmnilingual(context)
         val chosen = language.takeIf { code -> WhisperLanguages.all.any { it.first == code } } ?: ""
         val auto = chosen.isEmpty()
@@ -104,7 +98,7 @@ class SpeechEngine(private val context: Context, private val windowSec: Float = 
             val detected = identifyLanguages(reader, chunks, isCancelled) { step() }.map { LanguageRouting.automatic(it) }
             LanguageRouting.smooth(chunks, detected)
         } else List(chunks.size) { chosen }
-        val routes = languages.map { forceRoute ?: LanguageRouting.route(it, hasHindi, hasOmni) }
+        val routes = languages.map { forceRoute ?: LanguageRouting.route(it, hasOmni) }
 
         val texts = arrayOfNulls<String>(chunks.size)
         // One recognizer in memory at a time: group the pieces by recognizer.
@@ -121,7 +115,8 @@ class SpeechEngine(private val context: Context, private val windowSec: Float = 
                         try {
                             stream.acceptWaveform(samples, SPEECH_RATE)
                             recognizer.decode(stream)
-                            texts[i] = TranscriptText.clean(recognizer.getResult(stream).text)
+                            val raw = recognizer.getResult(stream).text
+                            texts[i] = TranscriptText.clean(if (languages[i] == "hi" || languages[i] == "ur") DevanagariCleanup.fix(raw) else raw)
                         } finally {
                             stream.release()
                         }
@@ -138,7 +133,7 @@ class SpeechEngine(private val context: Context, private val windowSec: Float = 
             val text = texts[i].orEmpty()
             if (text.isNotEmpty()) {
                 lines += TranscriptLine((c.start * 1000).toLong(), (c.end * 1000).toLong(), c.speaker, text)
-                spoken += if (languages[i] == "ur" && routes[i].recognizer == Recognizer.HINDI) "hi" else languages[i]
+                spoken += if (languages[i] == "ur") "hi" else languages[i]
             }
         }
         val renumbered = TranscriptText.renumberByAppearance(lines)
@@ -150,10 +145,6 @@ class SpeechEngine(private val context: Context, private val windowSec: Float = 
             Recognizer.ENGLISH, Recognizer.WHISPER_BASE -> OfflineModelConfig(
                 whisper = OfflineWhisperModelConfig(SpeechModels.WHISPER_ENCODER, SpeechModels.WHISPER_DECODER, language = route.whisperLanguage, task = "transcribe"),
                 tokens = SpeechModels.WHISPER_TOKENS, modelType = "whisper", numThreads = threads,
-            )
-            Recognizer.HINDI -> OfflineModelConfig(
-                whisper = OfflineWhisperModelConfig(SpeechModels.HINDI_ENCODER, SpeechModels.HINDI_DECODER, language = "hi", task = "transcribe"),
-                tokens = SpeechModels.HINDI_TOKENS, modelType = "whisper", numThreads = threads,
             )
             Recognizer.OMNILINGUAL -> OfflineModelConfig(
                 omnilingual = OfflineOmnilingualAsrCtcModelConfig(model = SpeechModels.OMNI_MODEL),

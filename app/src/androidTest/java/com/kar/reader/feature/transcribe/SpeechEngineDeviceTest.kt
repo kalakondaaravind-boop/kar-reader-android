@@ -67,40 +67,8 @@ class SpeechEngineDeviceTest {
     }
 
     @Test
-    fun hindiModelWithBaseVocabulary() {
-        // Diagnostic: the Hindi fine-tune decoded with Whisper base's tokens.txt (same multilingual vocabulary).
-        val rec = com.k2fsa.sherpa.onnx.OfflineRecognizer(
-            assetManager = app.assets,
-            config = com.k2fsa.sherpa.onnx.OfflineRecognizerConfig(
-                modelConfig = com.k2fsa.sherpa.onnx.OfflineModelConfig(
-                    whisper = com.k2fsa.sherpa.onnx.OfflineWhisperModelConfig(SpeechModels.HINDI_ENCODER, SpeechModels.HINDI_DECODER, language = "hi", task = "transcribe"),
-                    tokens = SpeechModels.WHISPER_TOKENS, modelType = "whisper", numThreads = 2,
-                ),
-            ),
-        )
-        WavReader(hindi).use { reader ->
-            val stream = rec.createStream()
-            stream.acceptWaveform(reader.read(0f, reader.durationSec), SPEECH_RATE)
-            rec.decode(stream)
-            val text = rec.getResult(stream).text
-            Log.i("KarSpeechTest", "[Hindi Whisper + base tokens] | $text")
-            stream.release()
-        }
-        rec.release()
-    }
-
-    @Test
-    fun hindiClipThroughEveryModel() {
-        // Diagnostic: the same Hindi clip through each recognizer, to judge the models against each other.
-        run("Hindi via Hindi Whisper", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(com.kar.reader.core.domain.Recognizer.HINDI, "hi"))
-        run("Hindi via Whisper base", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(com.kar.reader.core.domain.Recognizer.WHISPER_BASE, "hi"))
-        run("Hindi via Omnilingual", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(com.kar.reader.core.domain.Recognizer.OMNILINGUAL, ""))
-    }
-
-    @Test
     fun modelsAreBundled() {
         assertTrue(SpeechModels.available(app))
-        assertTrue(SpeechModels.hasHindi(app))
         assertTrue(SpeechModels.hasOmnilingual(app))
     }
 
@@ -110,13 +78,16 @@ class SpeechEngineDeviceTest {
         val text = r.lines.joinToString(" ") { it.text }
         assertTrue(report.toString(), r.languages.startsWith("hi"))
         assertTrue(report.toString(), text.count { it in '\u0900'..'\u097F' } > 10)
+        assertTrue(report.toString(), text.none { it in '\u0600'..'\u06FF' })
+        // Reference: हर कोई दुनिया को बदलने की सोचता है लेकिन कोई खुद को बदलने की सोचता ही नहीं
+        assertTrue(report.toString(), listOf("दुनिया", "बदलने", "सोचता", "लेकिन").count { it in text } >= 3)
         val roman = com.kar.reader.core.domain.HindiRoman.romanize(text)
         report.appendLine("  Roman: $roman"); Log.i("KarSpeechTest", "  Roman: $roman")
         assertTrue(report.toString(), roman.count { it in 'a'..'z' } > 10)
     }
 
     @Test
-    fun hindiChosenByHandUsesTheHindiModel() {
+    fun hindiChosenByHand() {
         val r = run("Hindi, chosen", SpeechEngine(app), separate = false, expected = 0, language = "hi", file = hindi)
         assertTrue(report.toString(), r.lines.joinToString(" ") { it.text }.count { it in '\u0900'..'\u097F' } > 10)
     }
@@ -128,5 +99,35 @@ class SpeechEngineDeviceTest {
         val chosen = run("German, chosen", SpeechEngine(app), separate = false, expected = 0, language = "de", file = german)
         assertTrue(report.toString(), chosen.languages.startsWith("de"))
         assertTrue(report.toString(), chosen.lines.joinToString(" ") { it.text }.count { it.isLetter() } > 10)
+    }
+
+    @Test
+    fun separatesTwoKnownSpeakers() {
+        val r = run("2 speakers, English", SpeechEngine(app), separate = true, expected = 2, language = "en")
+        assertTrue(report.toString(), r.lines.isNotEmpty())
+        assertEquals(report.toString(), 2, r.speakerCount)
+    }
+
+    @Test
+    fun findsSpeakersAndLanguageAutomatically() {
+        val r = run("automatic", SpeechEngine(app), separate = true, expected = 0, language = "")
+        assertTrue(report.toString(), r.speakerCount >= 1)
+        assertTrue(report.toString(), r.lines.joinToString(" ") { it.text }.count { it.isLetter() } > 20)
+        assertTrue(report.toString(), r.languages.startsWith("en"))
+    }
+
+    @Test
+    fun linksSpeakersAcrossWindows() {
+        // Short windows force the long-recording path: per-window diarization, voice embeddings and linking.
+        val r = run("6 s windows", SpeechEngine(app, windowSec = 6f), separate = true, expected = 0, language = "en")
+        assertTrue(report.toString(), r.lines.isNotEmpty())
+        assertTrue(report.toString(), r.speakerCount in 1..4)
+    }
+
+    @Test
+    fun singleSpeakerModeTranscribes() {
+        val r = run("no speaker separation", SpeechEngine(app), separate = false, expected = 0, language = "")
+        assertTrue(report.toString(), r.lines.isNotEmpty())
+        assertEquals(1, r.speakerCount)
     }
 }
