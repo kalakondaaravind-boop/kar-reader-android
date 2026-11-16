@@ -1,0 +1,26 @@
+name: Export Room schema
+on:
+  push:
+    branches: [ schema-export ]
+permissions:
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/cache@v4
+        with:
+          path: .speech-cache
+          key: speech-${{ hashFiles('gradle/libs.versions.toml', 'scripts/fetch-speech-models.sh', 'scripts/speech-models.sha256') }}
+      - run: chmod +x gradlew scripts/*.sh && ./scripts/fetch-speech-models.sh && ./gradlew kspStandardDebugKotlin
+      - name: Commit exported schema
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f app/schemas
+          git commit -m "Exported Room schemas"
+          git push origin HEAD:schema-export
