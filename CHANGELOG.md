@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 — development build
+- Fixed: crash after stopping a recording (the speech engine's progress callback is incompatible with Kotlin 2 lambdas).
+- The speech pipeline is tested on an Android emulator in CI with a two-speaker recording.
+
 ## 0.3.0 — development build (not device-tested)
 - Transcribe: record or import audio; on-device speaker separation and multilingual speech recognition
   (sherpa-onnx with Whisper base, pyannote segmentation 3.0 and 3D-Speaker embeddings); rename and merge speakers,
