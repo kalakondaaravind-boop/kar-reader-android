@@ -1,12 +1,14 @@
 name: Release
 
-# Builds installable APKs and attaches them to a GitHub Release: when a release is published, or when a
-# version tag (v*) is pushed (the release is then created).
+# Builds installable APKs and publishes them as a GitHub Release. Runs when a release is published, when a
+# version tag (v*) is pushed, or when the "release" branch is updated (the version comes from app/build.gradle.kts
+# and the release and its tag are created by this workflow).
 on:
   release:
     types: [ published ]
   push:
     tags: [ 'v*' ]
+    branches: [ release ]
 
 permissions:
   contents: write
@@ -23,6 +25,14 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
+
+      - name: Work out the version
+        run: |
+          V=$(sed -n 's/^ *versionName = "\(.*\)"/\1/p' app/build.gradle.kts)
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then TAG="$GITHUB_REF_NAME"; else TAG="v$V"; fi
+          echo "KAR_VERSION=${TAG#v}" >> "$GITHUB_ENV"
+          echo "KAR_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "::notice title=Release::$TAG"
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
@@ -90,7 +100,7 @@ jobs:
 
       - name: Collect files
         run: |
-          V=${GITHUB_REF_NAME#v}
+          V=$KAR_VERSION
           mkdir -p dist
           cp app/build/outputs/apk/standard/release/*.apk "dist/KAR-READER-$V.apk"
           cp app/build/outputs/apk/sync/release/*.apk "dist/KAR-READER-Sync-$V.apk"
@@ -102,8 +112,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          V=${GITHUB_REF_NAME#v}
-          NOTES=docs/releases/$GITHUB_REF_NAME.md
+          V=$KAR_VERSION
+          NOTES=docs/releases/$KAR_TAG.md
           [ -f "$NOTES" ] || NOTES=/dev/null
           {
             cat "$NOTES"
@@ -115,12 +125,13 @@ jobs:
             echo
             echo "SHA-256:"; echo '```'; cat dist/SHA256SUMS.txt; echo '```'
           } > release-notes.md
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
-            gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md
+          if gh release view "$KAR_TAG" >/dev/null 2>&1; then
+            gh release upload "$KAR_TAG" dist/* --clobber
+            gh release edit "$KAR_TAG" --notes-file release-notes.md
           else
-            gh release create "$GITHUB_REF_NAME" dist/* --title "KAR READER $V (development build)" --notes-file release-notes.md --prerelease
+            gh release create "$KAR_TAG" dist/* --target "$GITHUB_SHA" --title "KAR READER $V (development build)" --notes-file release-notes.md --prerelease
           fi
+          echo "::notice title=Published::https://github.com/$GITHUB_REPOSITORY/releases/tag/$KAR_TAG"
 
       - name: Report build errors as annotations
         if: failure()
