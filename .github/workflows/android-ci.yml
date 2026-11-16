@@ -175,7 +175,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            ./gradlew connectedStandardDebugAndroidTest -PkarAbis=x86_64 || touch device-test-failed
+            ./gradlew connectedStandardDebugAndroidTest -PkarAbis=x86_64 > device-test.txt 2>&1 || touch device-test-failed
             adb logcat -d -s KarSpeechTest:I > speech-report.txt || true
             adb logcat -d -b crash > crash-log.txt || true
 
@@ -190,7 +190,7 @@ jobs:
           fi
           python3 - <<'PY'
           import glob, xml.etree.ElementTree as ET
-          for f in glob.glob('app/build/outputs/androidTest-results/connected/**/*.xml', recursive=True):
+          for f in glob.glob('app/build/outputs/androidTest-results/**/*.xml', recursive=True) + glob.glob('app/build/test-results/**/connected*/**/*.xml', recursive=True):
               r = ET.parse(f).getroot()
               print(f"::notice title=Device tests::{r.get('tests')} tests, {r.get('failures')} failures, {r.get('errors')} errors")
               for case in r.iter('testcase'):
@@ -198,6 +198,7 @@ jobs:
                       detail = (bad.get('message') or '') + ' ' + (bad.text or '')[:1500]
                       print(f"::error title=Failed {case.get('name')}::" + detail.replace('%', '%25').replace('\n', '%0A')[:3000])
           PY
-          grep -E "^e: |What went wrong|FAILED" build-output.txt 2>/dev/null | head -20 | while IFS= read -r line; do echo "::error::${line:0:900}"; done
+          find app/build/outputs -path '*androidTest*' -name '*.xml' | head -5 | while read -r f; do echo "::notice title=Result file::$f"; done
+          grep -E "^e: |What went wrong|FAILED|Exception|Error|expected|Tests on" build-output.txt device-test.txt 2>/dev/null | grep -v "^build-output.txt:.*warning" | awk '!seen[$0]++' | head -40 | while IFS= read -r line; do echo "::error::${line:0:900}"; done
           [ ! -f device-test-failed ]
 
