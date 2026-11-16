@@ -48,7 +48,7 @@ enum class Stage { SPEAKERS, WORDS }
 
 data class EngineResult(val lines: List<TranscriptLine>, val speakerCount: Int, val languages: String)
 
-class SpeechEngine(private val context: Context) {
+class SpeechEngine(private val context: Context, private val windowSec: Float = WINDOW_SEC) {
     private val threads = Runtime.getRuntime().availableProcessors().coerceIn(1, 4)
 
     /**
@@ -67,9 +67,7 @@ class SpeechEngine(private val context: Context) {
         val total = reader.durationSec
         val spans = if (separateSpeakers && total > 1f) diarize(reader, total, expectedSpeakers, onProgress, isCancelled) else TranscriptPlanner.singleSpeaker(total)
         check(isCancelled)
-        val chunks = TranscriptPlanner.plan(spans) { ideal, earliest, latest ->
-            if (latest - earliest < 0.1f) ideal else earliest + QuietCut.find(reader.read(earliest, latest), SPEECH_RATE, 0f, latest - earliest)
-        }
+        val chunks = TranscriptPlanner.plan(spans) { ideal, earliest, latest -> quietMoment(reader, total, ideal, earliest, latest) }
         onProgress(Stage.WORDS, 0f)
         val lines = ArrayList<TranscriptLine>()
         val languages = ArrayList<String>()
@@ -124,8 +122,8 @@ class SpeechEngine(private val context: Context) {
         onProgress: (Stage, Float) -> Unit,
         isCancelled: () -> Boolean,
     ): List<SpeechSpan> {
-        val windows = TranscriptPlanner.windows(total, WINDOW_SEC) { ideal, earliest, latest ->
-            earliest + QuietCut.find(reader.read(earliest, latest), SPEECH_RATE, 0f, latest - earliest)
+        val windows = TranscriptPlanner.windows(total, windowSec) { ideal, earliest, latest ->
+            quietMoment(reader, total, ideal, earliest, latest)
         }
         val single = windows.size == 1
         val diarizer = OfflineSpeakerDiarization(
@@ -150,10 +148,11 @@ class SpeechEngine(private val context: Context) {
             windows.forEachIndexed { wi, w ->
                 check(isCancelled)
                 val samples = reader.read(w.start, w.endInclusive)
-                val segments = diarizer.processWithCallback(samples, callback = { done, all, _ ->
-                    onProgress(Stage.SPEAKERS, (wi + done.toFloat() / all.coerceAtLeast(1)) / windows.size)
-                    0
-                })
+                // Not processWithCallback: its native side looks up a lambda method signature, invoke(IIJ)Ljava/lang/Integer;,
+                // that Kotlin 2 (invokedynamic lambdas) no longer generates. The failed lookup left a JNI exception pending
+                // and crashed the app. Progress is reported per window instead.
+                onProgress(Stage.SPEAKERS, (wi + 0.05f) / windows.size)
+                val segments = diarizer.process(samples)
                 val local = segments.map { SpeechSpan(it.start, it.end, it.speaker) }
                 if (extractor == null) {
                     out += local
@@ -197,6 +196,14 @@ class SpeechEngine(private val context: Context) {
         } finally {
             stream.release()
         }
+    }
+
+    /** The quietest moment between [earliest] and [latest], clamped to the recording. */
+    private fun quietMoment(reader: WavReader, total: Float, ideal: Float, earliest: Float, latest: Float): Float {
+        val e = earliest.coerceIn(0f, total)
+        val l = latest.coerceIn(e, total)
+        if (l - e < 0.1f) return ideal.coerceIn(0f, total)
+        return e + QuietCut.find(reader.read(e, l), SPEECH_RATE, 0f, l - e)
     }
 
     private fun check(isCancelled: () -> Boolean) { if (isCancelled()) throw CancellationException() }

@@ -56,4 +56,10 @@ Speech components bundled with KAR READER (all run on the device):
 - 3D-Speaker ERes2Net (Alibaba DAMO), Apache License 2.0
 NOTICE
 
+if [ "${1:-}" = "--test-audio" ]; then
+  # Two English speakers, from the sherpa-onnx speaker-segmentation test set. Used only by the emulator test.
+  fetch "$BASE/speaker-segmentation-models/1-two-speakers-en.wav" two-speakers-en.wav
+  mkdir -p app/build/test-audio && cp "$CACHE/two-speakers-en.wav" app/build/test-audio/two-speakers-en.wav
+fi
+
 echo "Speech engine $VERSION and models:"; ls -l app/libs "$ASSETS" "$ASSETS/whisper"

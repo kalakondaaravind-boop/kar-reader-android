@@ -15,12 +15,14 @@ android {
         applicationId = "com.kar.reader"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.3.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         // The speech engine ships large native libraries; phones and tablets are ARM (64- and 32-bit).
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        // CI's emulator test builds x86_64 instead (-PkarAbis=x86_64).
+        val abis = providers.gradleProperty("karAbis").orNull?.split(',')?.map { it.trim() } ?: listOf("arm64-v8a", "armeabi-v7a")
+        ndk { abiFilters += abis }
     }
 
     // Release signing comes only from environment variables set by the release workflow. No key or password is
@@ -93,6 +95,8 @@ android {
         // Room's exported schemas, for the migration test (Robolectric reads the debug variant's assets).
         // Debug builds only; release APKs do not contain them.
         getByName("debug").assets.srcDir("$projectDir/schemas")
+        // Test recordings for the on-device speech test (downloaded by scripts/fetch-speech-models.sh --test-audio).
+        getByName("androidTest").assets.srcDir("$projectDir/build/test-audio")
     }
     lint {
         abortOnError = true

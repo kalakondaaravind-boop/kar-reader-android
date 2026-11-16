@@ -319,7 +319,9 @@ class TranscriptionManager @Inject constructor(
 
     private fun startService(mode: String) {
         val intent = Intent(context, TranscribeService::class.java).putExtra(TranscribeService.EXTRA_MODE, mode)
-        ContextCompat.startForegroundService(context, intent)
+        // Android can refuse a foreground start (for example when the app is in the background). The work still runs
+        // while the process lives, and is marked interrupted at next start if it is stopped; never crash for it.
+        runCatching { ContextCompat.startForegroundService(context, intent) }
     }
 
     private fun displayName(uri: Uri): String? = runCatching {
