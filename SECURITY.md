@@ -15,6 +15,8 @@ All imported files, ZIP archives, EPUB content, Calibre databases, backups and s
 | Hostile images | Cover decoding is bounded with `inSampleSize` and pixel limits |
 | Corrupt or forged backups | Fixed entry whitelist, size caps, manifest version check, SHA-256 checksum; restore in one transaction |
 | Sync snapshots | Size cap; merged in one transaction; Wi-Fi frames authenticated with HMAC-SHA256 keyed by the pairing code; private addresses only |
+| Untrusted audio files | Decoded by Android's own media codecs into a 16 kHz WAV in app storage; the original file is never modified |
+| Microphone | Used only while the recorder is open and recording; a foreground notification is shown the whole time |
 | Profile PINs | PBKDF2-HMAC-SHA256, 120,000 iterations, random salt |
 | Screenshots / recents preview | `FLAG_SECURE` when app lock is on |
 | Logs | The app does not log document content, notes or extracted text |

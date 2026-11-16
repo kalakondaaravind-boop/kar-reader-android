@@ -21,6 +21,11 @@ No accounts, ads, tracking or uploads. The standard build has **no network permi
 - Share a highlight as a quote-card image through Android's share menu.
 - Stylus notebooks: blank, lined, grid and dotted pages, shape straightening, lasso select/move/copy/recolour/delete, palm rejection.
 
+**Transcribe**
+- Record or import audio (MP3, M4A, WAV, OGG, FLAC, AMR, MP4 audio) and get a transcript with each voice labelled Speaker 1, 2, 3….
+- Runs entirely on the device: pyannote segmentation and 3D-Speaker voice embeddings tell speakers apart; multilingual Whisper base writes the words (99 languages, automatic detection).
+- Rename or merge speakers, correct lines, play from any line, mark moments while recording; export TXT, Markdown, SRT or PDF; save as a note linked to a book.
+
 **Habits**
 - Flashcards made from highlights and saved words, scheduled with spaced repetition (SM-2 family).
 - Focus sessions with optional Do Not Disturb; reading statistics, streaks, daily goals and a private "year in reading" recap.
@@ -45,24 +50,30 @@ No accounts, ads, tracking or uploads. The standard build has **no network permi
 | `standard` | `com.kar.reader` | **None** (verified in CI with `aapt dump permissions`) | Default. Folder sync only. |
 | `sync` | `com.kar.reader.sync` | `INTERNET`, `ACCESS_WIFI_STATE` | Adds direct Wi-Fi sync on the local network. Installs alongside. |
 
+## Download
+
+Installable APKs are published on the [Releases page](../../releases). Each release says which file to choose.
+
 ## Build it yourself
 
-Requirements: JDK 17, Android SDK (compileSdk 35). Then:
+Requirements: JDK 17, Android SDK (compileSdk 35), and about 700 MB free for the speech models. Then:
 
 ```bash
-./gradlew assembleStandardDebug          # app/build/outputs/apk/standard/debug/KAR-READER-0.2.0-standard-debug.apk
+./scripts/fetch-speech-models.sh         # speech engine (sherpa-onnx AAR) and models, checksum-verified
+./gradlew assembleStandardDebug          # app/build/outputs/apk/standard/debug/KAR-READER-0.3.0-standard-debug.apk
 ./gradlew testStandardDebugUnitTest      # unit tests
 ./gradlew lintStandardDebug
 ```
 
 Every push to `main` builds both flavours, runs unit tests and lint, checks the standard APK has no network
 permission, and uploads the debug APKs as the `KAR-READER-debug-apk` artifact on the Actions run.
+Pushing a `v*` tag builds signed release APKs and publishes them as a GitHub Release.
 
 ### Install a debug APK
 
 1. Open the latest successful run under **Actions → Android CI**, download `KAR-READER-debug-apk` and unzip it.
 2. On the tablet, allow installing apps from your file manager, then open the `standard` APK.
-   Or with a cable: `adb install KAR-READER-0.2.0-standard-debug.apk`.
+   Or with a cable: `adb install KAR-READER-0.3.0-standard-debug.apk`.
 
 ## Project layout
 

@@ -10,4 +10,6 @@
 - **Focus timer** stops if Android ends the app process.
 - **Profiles:** removing a profile hides its data but does not delete it.
 - **E-ink refresh** uses a generic black/white flash; vendor refresh modes are not used.
+- **Transcription:** speakers are labelled after recording stops, not live. It is slow on phones (often close to the recording's length) and accuracy depends on language, noise and distance from the microphone; overlapping speech and similar voices can be mixed up. Whisper base is a small model, so languages with less training data (for example Telugu) are less accurate. Transcripts are not yet included in backups or sync. The APK is about 250–300 MB because the models are bundled.
+- **Release signing:** until a permanent signing key is configured as repository secrets, release APKs are signed with a one-off key, so the next release cannot install over them (back up, uninstall, install, restore).
 - **Not yet built:** multi-document workspace and comparison, unified full-text search, OCR of existing scanned PDFs, text-to-speech, dictionary.

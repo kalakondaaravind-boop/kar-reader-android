@@ -46,6 +46,13 @@ No feature is VERIFIED end-to-end yet: the app has not been run on a device or e
 | R-KEY-1 | Page turns: volume keys, keyboard, BT remotes | P2 | `PageTurnBus`, `MainActivity` | — | IMPLEMENTED — NOT VERIFIED | |
 | R-STY-1 | Stylus notebooks, lasso, shapes, palm rejection | P2 | `NotebookScreen`, `ShapeRecognizer` | `InkGeometryTest` | **VERIFIED (unit)** geometry; UI NOT VERIFIED | Handwriting-to-text BLOCKED (needs network model download) |
 | R-PROF-1 | Family profiles with optional PIN | P2 | `ProfileRepository`, `ProfilesScreen` | `RetentionAndSyncTest` (PIN hashing) | IMPLEMENTED — NOT VERIFIED | |
+| R-TR-1 | Record audio, continue with screen off | P1 | `TranscriptionManager`, `TranscribeService` | — | IMPLEMENTED — NOT VERIFIED | Interrupted recordings are recovered up to the last ~5 s |
+| R-TR-2 | Import audio files and convert to 16 kHz | P1 | `AudioConverter` | `TranscriptionTest` (resampler, WAV) | **VERIFIED (unit)** maths; decoding NOT VERIFIED | Formats depend on the phone's decoders |
+| R-TR-3 | Separate speakers (diarization), consistent across long recordings | P1 | `SpeechEngine`, `SpeakerLinker` | `TranscriptionTest` (planning, linking) | **VERIFIED (unit)** logic; models NOT VERIFIED | Labelled after recording, not live; overlap and similar voices can be confused |
+| R-TR-4 | Multilingual on-device speech recognition | P1 | `SpeechEngine` (Whisper base) | — | IMPLEMENTED — NOT VERIFIED | Accuracy varies by language; slow on phones |
+| R-TR-5 | Rename/merge speakers, correct lines, playback | P1 | `TranscriptScreen`, `TranscriptDao` | `TranscriptDaoTest` | **VERIFIED (unit)** data; UI NOT VERIFIED | |
+| R-TR-6 | Export TXT, Markdown, SRT, PDF; save as note | P1 | `TranscriptRepository`, `TranscriptText` | `TranscriptionTest` (formats) | **VERIFIED (unit)** formats; files NOT VERIFIED | |
+| R-TR-7 | Transcripts in recycle bin; database upgrade keeps data | P0 | `TrashRepository`, `KarDatabase` v2 | `MigrationTest` | **VERIFIED (unit)** migration | Transcripts not yet in backup or sync |
 | R-WS-1 | Multi-document workspace and comparison | P1 | — | — | NOT STARTED | Planned; mockup exists |
 | R-SRCH-1 | Unified full-text search | P1 | — | — | NOT STARTED | Library search covers titles, authors, tags, series |
 | R-OCR-1 | OCR of existing scanned PDFs | P2 | — | — | NOT STARTED | Engine exists (`OnDeviceOcr`) |

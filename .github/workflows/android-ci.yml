@@ -63,6 +63,21 @@ jobs:
       - name: Unit tests
         run: ./gradlew testStandardDebugUnitTest 2>&1 | tee -a build-output.txt
 
+      - name: Summarize tests and APK contents
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          total = fail = 0; suites = []
+          for f in glob.glob('app/build/test-results/testStandardDebugUnitTest/*.xml'):
+              r = ET.parse(f).getroot(); t = int(r.get('tests')); x = int(r.get('failures')) + int(r.get('errors')); s = int(r.get('skipped'))
+              total += t; fail += x; suites.append(f"{r.get('name').split('.')[-1]} {t - x - s}/{t}")
+          print(f"::notice title=Unit tests::{total} tests, {fail} failed: " + ", ".join(sorted(suites)))
+          PY
+          for f in app/build/outputs/apk/*/debug/*.apk; do echo "::notice title=$(basename $f)::$(du -m "$f" | cut -f1) MB"; done
+          BT=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)
+          "${BT}aapt" list -v app/build/outputs/apk/standard/debug/*.apk | awk '$NF ~ /^(assets\/models|lib\/)/ {printf "%s %.0f MB\n", $NF, $1/1048576}' | sort -k2 -n -r | head -12 \
+            | while read -r line; do echo "::notice title=APK content::$line"; done
+
       - name: Lint
         run: ./gradlew lintStandardDebug lintSyncDebug 2>&1 | tee -a build-output.txt
 
