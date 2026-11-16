@@ -67,6 +67,29 @@ class SpeechEngineDeviceTest {
     }
 
     @Test
+    fun hindiModelWithBaseVocabulary() {
+        // Diagnostic: the Hindi fine-tune decoded with Whisper base's tokens.txt (same multilingual vocabulary).
+        val rec = com.k2fsa.sherpa.onnx.OfflineRecognizer(
+            assetManager = app.assets,
+            config = com.k2fsa.sherpa.onnx.OfflineRecognizerConfig(
+                modelConfig = com.k2fsa.sherpa.onnx.OfflineModelConfig(
+                    whisper = com.k2fsa.sherpa.onnx.OfflineWhisperModelConfig(SpeechModels.HINDI_ENCODER, SpeechModels.HINDI_DECODER, language = "hi", task = "transcribe"),
+                    tokens = SpeechModels.WHISPER_TOKENS, modelType = "whisper", numThreads = 2,
+                ),
+            ),
+        )
+        WavReader(hindi).use { reader ->
+            val stream = rec.createStream()
+            stream.acceptWaveform(reader.read(0f, reader.durationSec), SPEECH_RATE)
+            rec.decode(stream)
+            val text = rec.getResult(stream).text
+            Log.i("KarSpeechTest", "[Hindi Whisper + base tokens] | $text")
+            stream.release()
+        }
+        rec.release()
+    }
+
+    @Test
     fun hindiClipThroughEveryModel() {
         // Diagnostic: the same Hindi clip through each recognizer, to judge the models against each other.
         run("Hindi via Hindi Whisper", SpeechEngine(app), false, 0, "hi", hindi, com.kar.reader.core.domain.Route(com.kar.reader.core.domain.Recognizer.HINDI, "hi"))

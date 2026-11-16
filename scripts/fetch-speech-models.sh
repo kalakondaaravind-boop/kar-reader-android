@@ -82,4 +82,8 @@ if [ "${1:-}" = "--test-audio" ]; then
   cp "$CACHE/two-speakers-en.wav" "$CACHE/hi-hindi.wav" "$CACHE/de-german.wav" app/build/test-audio/
 fi
 
+# Diagnostic: the Hindi fine-tune should share Whisper's multilingual vocabulary with Whisper base.
+a="$ASSETS/whisper/tokens.txt"; b="$ASSETS/whisper-hi/tokens.txt"
+echo "::notice title=Tokens::base $(wc -l < "$a") lines, hindi $(wc -l < "$b") lines, differing lines $(diff "$a" "$b" | grep -c '^[<>]' || true); first differences: $(diff "$a" "$b" | head -6 | tr '\n' ' ' | cut -c1-600)"
+
 echo "Speech engine $VERSION and models:"; ls -l app/libs "$ASSETS" "$ASSETS/whisper"
