@@ -1,5 +1,6 @@
 package com.kar.reader
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
@@ -80,6 +81,9 @@ class MainActivity : FragmentActivity() {
         if (!isChangingConfigurations) lock.onAppBackgrounded()
     }
 
+    // Lint flags the super call because androidx marks ComponentActivity.dispatchKeyEvent as library-internal;
+    // overriding the platform Activity method and calling super is the documented way to see key events first.
+    @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         // Volume keys must be caught before the system changes the volume.
         val volume = event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN

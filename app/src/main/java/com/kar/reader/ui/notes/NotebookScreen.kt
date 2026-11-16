@@ -10,7 +10,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -251,7 +250,7 @@ fun NotebookScreen(onBack: () -> Unit, vm: NotebookViewModel = hiltViewModel()) 
             }
         }
         Box(Modifier.fillMaxSize().background(if (LocalKarStyle.current.eink) Color.White else Color(0xFF3A3F48)).verticalScroll(rememberScrollState(), enabled = false), contentAlignment = Alignment.TopCenter) {
-            BoxWithConstraints(Modifier.padding(16.dp).widthIn(max = 900.dp).fillMaxWidth()) {
+            Box(Modifier.padding(16.dp).widthIn(max = 900.dp).fillMaxWidth()) {
                 NotebookCanvas(
                     template = page?.template ?: "BLANK",
                     strokes = strokes,
