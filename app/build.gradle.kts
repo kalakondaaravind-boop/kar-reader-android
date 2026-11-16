@@ -90,8 +90,9 @@ android {
         noCompress += listOf("onnx", "txt")
     }
     sourceSets {
-        // Room's exported schemas, for the migration test.
-        getByName("test").assets.srcDir("$projectDir/schemas")
+        // Room's exported schemas, for the migration test (Robolectric reads the debug variant's assets).
+        // Debug builds only; release APKs do not contain them.
+        getByName("debug").assets.srcDir("$projectDir/schemas")
     }
     lint {
         abortOnError = true
