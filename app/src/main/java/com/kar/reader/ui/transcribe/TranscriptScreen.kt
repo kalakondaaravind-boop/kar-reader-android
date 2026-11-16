@@ -89,7 +89,10 @@ import com.kar.reader.data.db.TranscriptMarkEntity
 import com.kar.reader.data.db.TranscriptSegmentEntity
 import com.kar.reader.data.db.TranscriptSpeakerEntity
 import com.kar.reader.data.db.TranscriptStatus
+import com.kar.reader.data.prefs.AppPreferences
 import com.kar.reader.data.repo.ProfileRepository
+import com.kar.reader.core.domain.HindiRoman
+import kotlinx.coroutines.flow.map
 import com.kar.reader.data.repo.TranscriptExport
 import com.kar.reader.data.repo.TranscriptRepository
 import com.kar.reader.feature.transcribe.ProcessingState
@@ -166,7 +169,10 @@ class TranscriptViewModel @Inject constructor(
     private val repo: TranscriptRepository,
     private val manager: TranscriptionManager,
     private val profiles: ProfileRepository,
+    private val prefs: AppPreferences,
 ) : ViewModel() {
+    val hindiRoman: StateFlow<Boolean> = prefs.settings.map { it.hindiRoman }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    fun setHindiRoman(on: Boolean) = viewModelScope.launch { prefs.setHindiRoman(on) }
     val id: String = checkNotNull(saved["transcriptId"])
     val transcript: StateFlow<TranscriptEntity?> = repo.observe(id).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val segments: StateFlow<List<TranscriptSegmentEntity>> = repo.observeSegments(id).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -218,6 +224,7 @@ fun TranscriptScreen(onBack: () -> Unit, onOpenNote: (String) -> Unit, vm: Trans
     val position by vm.player.position.collectAsStateWithLifecycle()
     val playing by vm.player.playing.collectAsStateWithLifecycle()
     val speed by vm.player.speed.collectAsStateWithLifecycle()
+    val hindiRoman by vm.hindiRoman.collectAsStateWithLifecycle()
 
     var menu by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
@@ -240,6 +247,7 @@ fun TranscriptScreen(onBack: () -> Unit, onOpenNote: (String) -> Unit, vm: Trans
     fun name(s: Int) = names[s] ?: "Speaker ${s + 1}"
     val done = transcript?.status == TranscriptStatus.DONE
     val lines = segments.map { TranscriptLine(it.startMs, it.endMs, it.speaker, it.text) }
+    val hasHindi = segments.any { HindiRoman.hasDevanagari(it.text) }
     val share = TranscriptText.talkShare(lines)
     val speakerIds = (speakers.map { it.speaker } + segments.map { it.speaker }).distinct().sorted()
 
@@ -249,10 +257,16 @@ fun TranscriptScreen(onBack: () -> Unit, onOpenNote: (String) -> Unit, vm: Trans
             subtitle = transcript?.let { subtitle(it) },
             onBack = onBack, backIcon = Icons.AutoMirrored.Filled.ArrowBack,
         ) {
+            if (done && segments.any { HindiRoman.hasDevanagari(it.text) }) {
+                TextButton(onClick = { vm.setHindiRoman(!hindiRoman) }) { Text(if (hindiRoman) "देवनागरी" else "Roman") }
+            }
             if (done) IconButton(onClick = { speakerSheet = true }) { Icon(Icons.Filled.People, contentDescription = "Speakers") }
             IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "More") }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(text = { Text("Rename") }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { menu = false; renaming = true })
+                if (done && hasHindi) {
+                    DropdownMenuItem(text = { Text(if (hindiRoman) "Show Hindi in Devanagari" else "Show Hindi in Roman letters") }, onClick = { menu = false; vm.setHindiRoman(!hindiRoman) })
+                }
                 if (done) {
                     DropdownMenuItem(text = { Text("Save as note") }, leadingIcon = { Icon(Icons.Filled.EditNote, null) }, onClick = { menu = false; vm.saveAsNote(onOpenNote) })
                     TranscriptExport.entries.forEach { f ->
@@ -291,7 +305,8 @@ fun TranscriptScreen(onBack: () -> Unit, onOpenNote: (String) -> Unit, vm: Trans
                             if (segments.isEmpty()) item { EmptyState("No speech found", "The recording may be silent or too noisy. Try “Transcribe again” with the language set explicitly.") }
                             items(segments, key = { it.id }) { s ->
                                 val current = position in s.startMs until s.endMs && (playing || position > 0)
-                                SegmentRow(s, name(s.speaker), current, onClick = { vm.player.playFrom(s.startMs) }, onLongClick = { editing = s })
+                                val shown = if (hindiRoman) s.copy(text = HindiRoman.romanize(s.text)) else s
+                                SegmentRow(shown, name(s.speaker), current, onClick = { vm.player.playFrom(s.startMs) }, onLongClick = { editing = shown })
                             }
                             item {
                                 Text(

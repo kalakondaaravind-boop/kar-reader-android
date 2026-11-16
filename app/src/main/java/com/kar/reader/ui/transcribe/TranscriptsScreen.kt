@@ -61,6 +61,7 @@ import com.kar.reader.core.domain.WhisperLanguages
 import com.kar.reader.data.db.TranscriptEntity
 import com.kar.reader.data.db.TranscriptStatus
 import com.kar.reader.data.db.displayTitle
+import com.kar.reader.data.prefs.AppPreferences
 import com.kar.reader.data.repo.LibraryRepository
 import com.kar.reader.data.repo.ProfileRepository
 import com.kar.reader.data.repo.TranscriptRepository
@@ -90,7 +91,11 @@ class TranscriptsViewModel @Inject constructor(
     library: LibraryRepository,
     repo: TranscriptRepository,
     private val manager: TranscriptionManager,
+    private val prefs: AppPreferences,
 ) : ViewModel() {
+    val hindiRoman: StateFlow<Boolean> = prefs.settings.map { it.hindiRoman }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    fun setHindiRoman(on: Boolean) = viewModelScope.launch { prefs.setHindiRoman(on) }
+
     val transcripts: StateFlow<List<TranscriptEntity>?> = profiles.currentId.flatMapLatest { repo.observeList(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val books: StateFlow<List<Pair<String, String>>> = profiles.currentId.flatMapLatest { library.observeLibrary(it) }
@@ -135,6 +140,7 @@ fun TranscriptsScreen(
     val processing by vm.processing.collectAsStateWithLifecycle()
     val options by vm.options.collectAsStateWithLifecycle()
     val message by vm.message.collectAsStateWithLifecycle()
+    val hindiRoman by vm.hindiRoman.collectAsStateWithLifecycle()
     var permissionNote by remember { mutableStateOf<String?>(null) }
 
     val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -201,6 +207,7 @@ fun TranscriptsScreen(
                             separateSpeakers = options.separateSpeakers, onSeparate = { v -> vm.update { it.copy(separateSpeakers = v) } },
                             expectedSpeakers = options.expectedSpeakers, onExpected = { n -> vm.update { it.copy(expectedSpeakers = n) } },
                         )
+                        HindiScriptPicker(hindiRoman, vm::setHindiRoman)
                         BookPicker(books, options.bookId) { id -> vm.update { it.copy(bookId = id) } }
                     }
                 }

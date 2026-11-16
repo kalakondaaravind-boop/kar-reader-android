@@ -37,6 +37,8 @@ data class AppSettings(
     val autoFlashcards: Boolean = true,
     val stylusOnlyDrawing: Boolean = false,
     val citationStyle: CitationStyle = CitationStyle.APA,
+    /** Show and export Hindi transcript text in Roman letters instead of Devanagari. */
+    val hindiRoman: Boolean = false,
     val syncFolderUri: String? = null,
     val lastSyncAt: Long = 0,
 )
@@ -59,6 +61,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val AUTO_CARDS = booleanPreferencesKey("auto_flashcards")
         val STYLUS_ONLY = booleanPreferencesKey("stylus_only")
         val CITATION = stringPreferencesKey("citation_style")
+        val HINDI_ROMAN = booleanPreferencesKey("hindi_roman")
         val SYNC_URI = stringPreferencesKey("sync_folder_uri")
         val LAST_SYNC = longPreferencesKey("last_sync_at")
         val PROFILE = stringPreferencesKey("current_profile")
@@ -80,6 +83,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             autoFlashcards = p[Keys.AUTO_CARDS] ?: true,
             stylusOnlyDrawing = p[Keys.STYLUS_ONLY] ?: false,
             citationStyle = p[Keys.CITATION]?.let { v -> CitationStyle.entries.firstOrNull { it.name == v } } ?: CitationStyle.APA,
+            hindiRoman = p[Keys.HINDI_ROMAN] ?: false,
             syncFolderUri = p[Keys.SYNC_URI],
             lastSyncAt = p[Keys.LAST_SYNC] ?: 0,
         )
@@ -101,6 +105,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     suspend fun setAutoFlashcards(on: Boolean) = edit { it[Keys.AUTO_CARDS] = on }
     suspend fun setStylusOnlyDrawing(on: Boolean) = edit { it[Keys.STYLUS_ONLY] = on }
     suspend fun setCitationStyle(style: CitationStyle) = edit { it[Keys.CITATION] = style.name }
+    suspend fun setHindiRoman(on: Boolean) = edit { it[Keys.HINDI_ROMAN] = on }
     suspend fun setSyncFolder(uri: String?) = edit { if (uri == null) it.remove(Keys.SYNC_URI) else it[Keys.SYNC_URI] = uri }
     suspend fun setLastSyncAt(time: Long) = edit { it[Keys.LAST_SYNC] = time }
     suspend fun setCurrentProfile(id: String) = edit { it[Keys.PROFILE] = id }

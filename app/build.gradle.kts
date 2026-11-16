@@ -15,8 +15,8 @@ android {
         applicationId = "com.kar.reader"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         // The speech engine ships large native libraries; phones and tablets are ARM (64- and 32-bit).

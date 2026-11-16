@@ -115,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: KAR-READER-debug-apk
-          path: app/build/outputs/apk/*/debug/*.apk
+          path: app/build/outputs/apk/standard/debug/*.apk
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
@@ -171,7 +171,7 @@ jobs:
           arch: x86_64
           target: google_apis
           ram-size: 4096M
-          disk-size: 6000M
+          disk-size: 8000M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |

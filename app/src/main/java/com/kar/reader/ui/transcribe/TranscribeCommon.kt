@@ -123,7 +123,8 @@ fun LanguagePicker(language: String, onLanguage: (String) -> Unit) {
             }
         }
         Text(
-            "Mixed-language speech (Hindi with English, say) works best on automatic.",
+            "English, Hindi and Hinglish each use a model made for them; other languages use a model for 1600+ languages. " +
+                "Hinglish works best on Automatic or Hindi.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -173,3 +174,19 @@ fun StatusChip(status: String) {
     }
 }
 
+
+/** Devanagari or Roman letters for Hindi text. Applies to every transcript, its exports and notes, and can change any time. */
+@Composable
+fun HindiScriptPicker(roman: Boolean, onRoman: (Boolean) -> Unit) {
+    Column {
+        Text("Write Hindi in", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            SegmentedButton(selected = !roman, onClick = { onRoman(false) }, shape = SegmentedButtonDefaults.itemShape(0, 2), icon = {}) { Text("देवनागरी Devanagari", maxLines = 1, fontSize = 13.sp) }
+            SegmentedButton(selected = roman, onClick = { onRoman(true) }, shape = SegmentedButtonDefaults.itemShape(1, 2), icon = {}) { Text("Roman (Hinglish)", maxLines = 1, fontSize = 13.sp) }
+        }
+        Text(
+            if (roman) "Shown like “aaj ka topic kya hai”. You can switch back any time." else "Shown like “आज का टॉपिक क्या है”. You can switch any time.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}

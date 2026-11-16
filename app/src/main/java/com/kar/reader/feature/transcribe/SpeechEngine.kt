@@ -3,6 +3,7 @@ package com.kar.reader.feature.transcribe
 import android.content.Context
 import com.k2fsa.sherpa.onnx.FastClusteringConfig
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
+import com.k2fsa.sherpa.onnx.OfflineOmnilingualAsrCtcModelConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
 import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OfflineSpeakerDiarization
@@ -12,7 +13,13 @@ import com.k2fsa.sherpa.onnx.OfflineSpeakerSegmentationPyannoteModelConfig
 import com.k2fsa.sherpa.onnx.OfflineWhisperModelConfig
 import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractor
 import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractorConfig
+import com.k2fsa.sherpa.onnx.SpokenLanguageIdentification
+import com.k2fsa.sherpa.onnx.SpokenLanguageIdentificationConfig
+import com.k2fsa.sherpa.onnx.SpokenLanguageIdentificationWhisperConfig
+import com.kar.reader.core.domain.LanguageRouting
 import com.kar.reader.core.domain.QuietCut
+import com.kar.reader.core.domain.Recognizer
+import com.kar.reader.core.domain.Route
 import com.kar.reader.core.domain.SpeakerLinker
 import com.kar.reader.core.domain.SpeechSpan
 import com.kar.reader.core.domain.TranscriptLine
@@ -33,8 +40,20 @@ object SpeechModels {
     const val WHISPER_ENCODER = "models/whisper/encoder.int8.onnx"
     const val WHISPER_DECODER = "models/whisper/decoder.int8.onnx"
     const val WHISPER_TOKENS = "models/whisper/tokens.txt"
+    const val HINDI_ENCODER = "models/whisper-hi/encoder.int8.onnx"
+    const val HINDI_DECODER = "models/whisper-hi/decoder.int8.onnx"
+    const val HINDI_TOKENS = "models/whisper-hi/tokens.txt"
+    const val OMNI_MODEL = "models/omnilingual/model.int8.onnx"
+    const val OMNI_TOKENS = "models/omnilingual/tokens.txt"
     /** Describes the bundled models for the About and privacy screens. */
-    const val DESCRIPTION = "Whisper base (multilingual, int8) · pyannote segmentation 3.0 · 3D-Speaker ERes2Net embeddings"
+    const val DESCRIPTION = "Whisper base (English and language identification) · Whisper small fine-tuned for Hindi · " +
+        "Omnilingual ASR 300M (other languages) · pyannote segmentation 3.0 · 3D-Speaker ERes2Net embeddings"
+
+    fun hasHindi(context: Context): Boolean =
+        runCatching { context.assets.list("models/whisper-hi").orEmpty().toSet().containsAll(listOf("encoder.int8.onnx", "decoder.int8.onnx", "tokens.txt")) }.getOrDefault(false)
+
+    fun hasOmnilingual(context: Context): Boolean =
+        runCatching { context.assets.list("models/omnilingual").orEmpty().toSet().containsAll(listOf("model.int8.onnx", "tokens.txt")) }.getOrDefault(false)
 
     fun available(context: Context): Boolean = runCatching {
         val root = context.assets.list("models").orEmpty().toSet()
@@ -69,50 +88,105 @@ class SpeechEngine(private val context: Context, private val windowSec: Float = 
         check(isCancelled)
         val chunks = TranscriptPlanner.plan(spans) { ideal, earliest, latest -> quietMoment(reader, total, ideal, earliest, latest) }
         onProgress(Stage.WORDS, 0f)
+        val hasHindi = SpeechModels.hasHindi(context)
+        val hasOmni = SpeechModels.hasOmnilingual(context)
+        val chosen = language.takeIf { code -> WhisperLanguages.all.any { it.first == code } } ?: ""
+        val auto = chosen.isEmpty()
+        // Work units: identifying the language of each piece (automatic only), then writing each piece.
+        val totalWork = chunks.size * (if (auto) 2 else 1)
+        var done = 0
+        fun step() { done++; onProgress(Stage.WORDS, done.toFloat() / totalWork.coerceAtLeast(1)) }
+
+        val languages: List<String> = if (auto) {
+            val detected = identifyLanguages(reader, chunks, isCancelled) { step() }
+            LanguageRouting.smooth(chunks, detected)
+        } else List(chunks.size) { chosen }
+        val routes = languages.map { LanguageRouting.route(it, hasHindi, hasOmni) }
+
+        val texts = arrayOfNulls<String>(chunks.size)
+        // One recognizer in memory at a time: group the pieces by recognizer.
+        for ((route, indices) in chunks.indices.groupBy { routes[it] }) {
+            check(isCancelled)
+            val recognizer = OfflineRecognizer(assetManager = context.assets, config = recognizerConfig(route))
+            try {
+                for (i in indices) {
+                    check(isCancelled)
+                    val c = chunks[i]
+                    val samples = reader.read(c.start, c.end)
+                    if (samples.size >= SPEECH_RATE / 5) {
+                        val stream = recognizer.createStream()
+                        try {
+                            stream.acceptWaveform(samples, SPEECH_RATE)
+                            recognizer.decode(stream)
+                            texts[i] = TranscriptText.clean(recognizer.getResult(stream).text)
+                        } finally {
+                            stream.release()
+                        }
+                    }
+                    step()
+                }
+            } finally {
+                recognizer.release()
+            }
+        }
         val lines = ArrayList<TranscriptLine>()
-        val languages = ArrayList<String>()
-        val recognizer = OfflineRecognizer(
+        val spoken = ArrayList<String>()
+        chunks.forEachIndexed { i, c ->
+            val text = texts[i].orEmpty()
+            if (text.isNotEmpty()) {
+                lines += TranscriptLine((c.start * 1000).toLong(), (c.end * 1000).toLong(), c.speaker, text)
+                spoken += if (languages[i] == "ur" && routes[i].recognizer == Recognizer.HINDI) "hi" else languages[i]
+            }
+        }
+        val renumbered = TranscriptText.renumberByAppearance(lines)
+        EngineResult(renumbered, renumbered.map { it.speaker }.distinct().size.coerceAtLeast(if (renumbered.isEmpty()) 0 else 1), WhisperLanguages.summarize(spoken))
+    }
+
+    private fun recognizerConfig(route: Route): OfflineRecognizerConfig {
+        val model = when (route.recognizer) {
+            Recognizer.ENGLISH, Recognizer.WHISPER_BASE -> OfflineModelConfig(
+                whisper = OfflineWhisperModelConfig(SpeechModels.WHISPER_ENCODER, SpeechModels.WHISPER_DECODER, language = route.whisperLanguage, task = "transcribe"),
+                tokens = SpeechModels.WHISPER_TOKENS, modelType = "whisper", numThreads = threads,
+            )
+            Recognizer.HINDI -> OfflineModelConfig(
+                whisper = OfflineWhisperModelConfig(SpeechModels.HINDI_ENCODER, SpeechModels.HINDI_DECODER, language = "hi", task = "transcribe"),
+                tokens = SpeechModels.HINDI_TOKENS, modelType = "whisper", numThreads = threads,
+            )
+            Recognizer.OMNILINGUAL -> OfflineModelConfig(
+                omnilingual = OfflineOmnilingualAsrCtcModelConfig(model = SpeechModels.OMNI_MODEL),
+                tokens = SpeechModels.OMNI_TOKENS, numThreads = threads,
+            )
+        }
+        return OfflineRecognizerConfig(modelConfig = model)
+    }
+
+    /** Spoken language of each piece (Whisper base's language identifier). Very short pieces get "" and are filled in later. */
+    private fun identifyLanguages(reader: WavReader, chunks: List<SpeechSpan>, isCancelled: () -> Boolean, onEach: () -> kotlin.Unit): List<String> {
+        val lid = SpokenLanguageIdentification(
             assetManager = context.assets,
-            config = OfflineRecognizerConfig(
-                modelConfig = OfflineModelConfig(
-                    whisper = OfflineWhisperModelConfig(
-                        encoder = SpeechModels.WHISPER_ENCODER,
-                        decoder = SpeechModels.WHISPER_DECODER,
-                        language = language.takeIf { code -> WhisperLanguages.all.any { it.first == code } } ?: "",
-                        task = "transcribe",
-                    ),
-                    tokens = SpeechModels.WHISPER_TOKENS,
-                    modelType = "whisper",
-                    numThreads = threads,
-                ),
+            config = SpokenLanguageIdentificationConfig(
+                whisper = SpokenLanguageIdentificationWhisperConfig(SpeechModels.WHISPER_ENCODER, SpeechModels.WHISPER_DECODER),
+                numThreads = threads,
             ),
         )
         try {
-            chunks.forEachIndexed { i, c ->
+            return chunks.map { c ->
                 check(isCancelled)
-                val samples = reader.read(c.start, c.end)
-                if (samples.size >= SPEECH_RATE / 5) {
-                    val stream = recognizer.createStream()
+                val code = if (c.duration < 1.5f) "" else {
+                    val stream = lid.createStream()
                     try {
-                        stream.acceptWaveform(samples, SPEECH_RATE)
-                        recognizer.decode(stream)
-                        val result = recognizer.getResult(stream)
-                        val text = TranscriptText.clean(result.text)
-                        if (text.isNotEmpty()) {
-                            lines += TranscriptLine((c.start * 1000).toLong(), (c.end * 1000).toLong(), c.speaker, text)
-                            languages += result.lang
-                        }
+                        stream.acceptWaveform(reader.read(c.start, c.end), SPEECH_RATE)
+                        lid.compute(stream).trim()
                     } finally {
                         stream.release()
                     }
                 }
-                onProgress(Stage.WORDS, (i + 1f) / chunks.size)
+                onEach()
+                code
             }
         } finally {
-            recognizer.release()
+            lid.release()
         }
-        val renumbered = TranscriptText.renumberByAppearance(lines)
-        EngineResult(renumbered, renumbered.map { it.speaker }.distinct().size.coerceAtLeast(if (renumbered.isEmpty()) 0 else 1), WhisperLanguages.summarize(languages))
     }
 
     private fun diarize(

@@ -21,6 +21,9 @@ import com.kar.reader.data.db.TranscriptSpeakerEntity
 import com.kar.reader.data.db.TranscriptStatus
 import com.kar.reader.data.db.displayTitle
 import com.kar.reader.data.files.DocumentStore
+import com.kar.reader.data.prefs.AppPreferences
+import com.kar.reader.core.domain.HindiRoman
+import kotlinx.coroutines.flow.first
 import com.kar.reader.feature.transcribe.TranscriptionManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +50,7 @@ class TranscriptRepository @Inject constructor(
     private val store: DocumentStore,
     private val annotations: AnnotationRepository,
     private val manager: TranscriptionManager,
+    private val prefs: AppPreferences,
 ) {
     fun observeList(profileId: String): Flow<List<TranscriptEntity>> = dao.observeForProfile(profileId)
     fun observe(id: String): Flow<TranscriptEntity?> = dao.observe(id)
@@ -99,7 +103,8 @@ class TranscriptRepository @Inject constructor(
 
     suspend fun load(id: String): Loaded {
         val t = dao.get(id) ?: throw IOException("Transcript not found")
-        val lines = dao.segments(id).map { TranscriptLine(it.startMs, it.endMs, it.speaker, it.text) }
+        val roman = prefs.settings.first().hindiRoman
+        val lines = dao.segments(id).map { TranscriptLine(it.startMs, it.endMs, it.speaker, if (roman) HindiRoman.romanize(it.text) else it.text) }
         val names = dao.speakers(id).associate { it.speaker to it.name }
         val book = t.bookId?.let { bookDao.get(it) }?.displayTitle
         return Loaded(t, lines, names, book)

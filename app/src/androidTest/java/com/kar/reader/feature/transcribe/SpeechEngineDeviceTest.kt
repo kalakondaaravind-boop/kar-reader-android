@@ -21,6 +21,8 @@ class SpeechEngineDeviceTest {
 
     companion object {
         private lateinit var wav: File
+        private lateinit var hindi: File
+        private lateinit var german: File
         private val report = StringBuilder()
 
         @JvmStatic
@@ -34,14 +36,27 @@ class SpeechEngineDeviceTest {
             val ms = AudioConverter.toSpeechWav(app, Uri.fromFile(src), wav, {}, { false })
             report.appendLine("converted: ${ms} ms")
             assertTrue("conversion produced ${ms} ms", ms > 5_000)
+            hindi = convert("hi-hindi.wav")
+            german = convert("de-german.wav")
+        }
+
+        private fun convert(asset: String): File {
+            val inst = InstrumentationRegistry.getInstrumentation()
+            val app = inst.targetContext
+            val src = File(app.cacheDir, "src-$asset")
+            inst.context.assets.open(asset).use { input -> src.outputStream().use { input.copyTo(it) } }
+            val out = File(app.cacheDir, "16k-$asset")
+            val ms = AudioConverter.toSpeechWav(app, Uri.fromFile(src), out, {}, { false })
+            assertTrue("$asset converted to $ms ms", ms > 1_000)
+            return out
         }
     }
 
     private val app get() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    private fun run(label: String, engine: SpeechEngine, separate: Boolean, expected: Int, language: String): EngineResult {
+    private fun run(label: String, engine: SpeechEngine, separate: Boolean, expected: Int, language: String, file: File = wav): EngineResult {
         val started = System.currentTimeMillis()
-        val r = engine.transcribe(wav, separate, expected, language, { _, _ -> }, { false })
+        val r = engine.transcribe(file, separate, expected, language, { _, _ -> }, { false })
         report.appendLine("[$label] ${System.currentTimeMillis() - started} ms, speakers=${r.speakerCount}, languages=${r.languages}")
         r.lines.forEach { report.appendLine("  S${it.speaker + 1} ${it.startMs}-${it.endMs}: ${it.text}") }
         File(app.filesDir, "speech-test-report.txt").writeText(report.toString())
@@ -52,6 +67,32 @@ class SpeechEngineDeviceTest {
     @Test
     fun modelsAreBundled() {
         assertTrue(SpeechModels.available(app))
+        assertTrue(SpeechModels.hasHindi(app))
+        assertTrue(SpeechModels.hasOmnilingual(app))
+    }
+
+    @Test
+    fun hindiIsDetectedAndWrittenInDevanagari() {
+        val r = run("Hindi, automatic", SpeechEngine(app), separate = false, expected = 0, language = "", file = hindi)
+        val text = r.lines.joinToString(" ") { it.text }
+        assertTrue(report.toString(), r.languages.startsWith("hi"))
+        assertTrue(report.toString(), text.count { it in '\u0900'..'\u097F' } > 10)
+        val roman = com.kar.reader.core.domain.HindiRoman.romanize(text)
+        report.appendLine("  Roman: $roman"); Log.i("KarSpeechTest", "  Roman: $roman")
+        assertTrue(report.toString(), roman.count { it in 'a'..'z' } > 10)
+    }
+
+    @Test
+    fun hindiChosenByHandUsesTheHindiModel() {
+        val r = run("Hindi, chosen", SpeechEngine(app), separate = false, expected = 0, language = "hi", file = hindi)
+        assertTrue(report.toString(), r.lines.joinToString(" ") { it.text }.count { it in '\u0900'..'\u097F' } > 10)
+    }
+
+    @Test
+    fun otherLanguagesUseOmnilingual() {
+        val r = run("German, automatic", SpeechEngine(app), separate = false, expected = 0, language = "", file = german)
+        assertTrue(report.toString(), r.languages.startsWith("de"))
+        assertTrue(report.toString(), r.lines.joinToString(" ") { it.text }.count { it.isLetter() } > 10)
     }
 
     @Test
