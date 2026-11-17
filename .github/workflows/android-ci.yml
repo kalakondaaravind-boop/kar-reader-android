@@ -134,6 +134,8 @@ jobs:
     name: Speech engine on an Android emulator
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    permissions:
+      contents: write   # pushes screenshots of the running app to the "screenshots" branch
     steps:
       - uses: actions/checkout@v5
 
@@ -178,6 +180,19 @@ jobs:
             ./gradlew connectedStandardDebugAndroidTest -PkarAbis=x86_64 > device-test.txt 2>&1 || touch device-test-failed
             adb logcat -d -s KarSpeechTest:I > speech-report.txt || true
             adb logcat -d -b crash > crash-log.txt || true
+            ./scripts/capture-screenshots.sh || true
+
+      - name: Publish screenshots
+        if: github.ref == 'refs/heads/main'
+        run: |
+          [ -d screenshots ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch -q origin screenshots || true
+          git switch -q --orphan screenshots-new
+          git rm -rq --cached . >/dev/null 2>&1 || true
+          git add -f screenshots/*.png
+          git commit -qm "Screenshots of ${GITHUB_SHA::7}" && git push -qf origin HEAD:screenshots
 
       - name: Report results
         if: always()
