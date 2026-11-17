@@ -81,6 +81,8 @@ data class TranscriptMeta(
     val deletedAt: Long = 0,
     val separate: Boolean = true,  // tell speakers apart
     val speakers: Int = 0,         // expected number of speakers, 0 = find out
+    val startedAt: Long = 0,       // when a live recording began (0 for imported audio)
+    val meeting: Boolean = false,  // recorded as a desktop meeting (microphone + what the computer plays)
 )
 
 @Serializable
@@ -106,5 +108,6 @@ data class Data(
     val cards: List<Card> = emptyList(),
     val sessions: List<Session> = emptyList(),
     val transcripts: List<TranscriptMeta> = emptyList(),
+    val minutes: List<Minutes> = emptyList(),
     val settings: Settings = Settings(),
 )

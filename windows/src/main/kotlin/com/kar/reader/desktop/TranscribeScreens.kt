@@ -133,28 +133,47 @@ fun RecordingScreen(state: AppState, nav: Nav, jobs: TranscribeJobs) {
     var language by remember { mutableStateOf(AUTOMATIC) }
     var separate by remember { mutableStateOf(true) }
     var speakers by remember { mutableIntStateOf(0) }
+    var meetingMode by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("Recording ${formatDateTime(System.currentTimeMillis())}") }
     val id = remember { state.newId() }
-    val recorder = remember { MicRecorder(File(Paths.recordings, "$id.wav")) }
+    val file = remember { File(Paths.recordings, "$id.wav") }
+    val recorder = remember { MicRecorder(file) }
+    val meetingRec = remember { MeetingRecorder(file) }
     var started by remember { mutableStateOf(false) }
+    var startedAt by remember { mutableLongStateOf(0L) }
     var elapsed by remember { mutableLongStateOf(0L) }
     var level by remember { mutableFloatStateOf(0f) }
     var paused by remember { mutableStateOf(false) }
-    DisposableEffect(Unit) { onDispose { if (started) recorder.stop() } }
+    var meetingNote by remember { mutableStateOf<String?>(null) }
+    var sysOn by remember { mutableStateOf(false) }
+    fun stopRecorder(): Long = if (meetingMode) meetingRec.stop() else recorder.stop()
+    DisposableEffect(Unit) { onDispose { if (started) { if (meetingMode) meetingRec.discard() else recorder.stop() } } }
     LaunchedEffect(started) {
-        while (started) { elapsed = recorder.elapsedMs; level = recorder.level; recorder.error?.let { state.toast(it); started = false }; delay(120) }
+        while (started) {
+            elapsed = if (meetingMode) meetingRec.elapsedMs else recorder.elapsedMs
+            level = if (meetingMode) meetingRec.level else recorder.level
+            val err = if (meetingMode) meetingRec.error else recorder.error
+            err?.let { state.toast(it); started = false }
+            delay(120)
+        }
+    }
+    fun begin() {
+        startedAt = System.currentTimeMillis()
+        if (meetingMode) { meetingRec.start(); meetingNote = meetingRec.note; sysOn = meetingRec.systemAudio } else recorder.start()
+        started = true
     }
     fun finish(transcribe: Boolean) {
-        val ms = recorder.stop(); started = false
-        if (ms < 1000) { File(Paths.recordings, "$id.wav").delete(); state.toast("That recording was too short to keep."); nav.go(Screen.Transcribe); return }
-        val meta = TranscriptMeta(id, title.ifBlank { "Recording" }, System.currentTimeMillis(), ms, "$id.wav", language, separate = separate, speakers = speakers)
+        val ms = stopRecorder(); started = false
+        if (ms < 1000) { file.delete(); state.toast("That recording was too short to keep."); nav.go(Screen.Transcribe); return }
+        val meta = TranscriptMeta(id, title.ifBlank { if (meetingMode) "Meeting" else "Recording" }, System.currentTimeMillis(), ms, "$id.wav", language, separate = separate, speakers = speakers, startedAt = startedAt, meeting = meetingMode)
         if (transcribe && SpeechPaths.available()) jobs.submit(meta) else state.update { it.copy(transcripts = it.transcripts + meta.copy(status = "failed", error = "Saved. Press “Transcribe again” when you're ready.")) }
+        meetingRec.note?.let { state.toast(it) }
         nav.go(Screen.Transcribe)
     }
     Column(Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = { if (started) { recorder.stop(); started = false; File(Paths.recordings, "$id.wav").delete() }; nav.go(Screen.Transcribe) }) { Text("← Back") }
-            Title("Record", Modifier.weight(1f))
+            TextButton(onClick = { if (started) { if (meetingMode) meetingRec.discard() else { recorder.stop(); file.delete() }; started = false }; nav.go(Screen.Transcribe) }) { Text("← Back") }
+            Title(if (meetingMode) "Record a meeting" else "Record", Modifier.weight(1f))
         }
         Panel(Modifier.fillMaxWidth().widthIn(max = 760.dp)) {
             Column(Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -163,14 +182,22 @@ fun RecordingScreen(state: AppState, nav: Nav, jobs: TranscribeJobs) {
                     Box(Modifier.fillMaxHeight().fillMaxWidth((level * 4f).coerceIn(0.02f, 1f)).background(if (paused) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.secondary))
                 }
                 if (!started) {
-                    OutlinedTextField(title, { title = it }, label = { Text("Title") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Chip("Microphone only", !meetingMode) { meetingMode = false }
+                        Chip("Meeting on this computer", meetingMode) { meetingMode = true; if (title.startsWith("Recording ")) title = "Meeting ${formatDateTime(System.currentTimeMillis())}" }
+                    }
+                    OutlinedTextField(title, { title = it }, label = { Text(if (meetingMode) "Meeting name" else "Title") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     LanguagePicker(language) { language = it }
                     SpeakerCountPicker(speakers, separate, { separate = it }) { speakers = it }
-                    PrimaryButton("● Start recording", { recorder.start(); started = true }, enabled = SpeechPaths.available() || true)
-                    Muted("Recording uses your default Windows microphone. Audio stays on this computer.")
+                    PrimaryButton(if (meetingMode) "● Start recording the meeting" else "● Start recording", { begin() })
+                    if (meetingMode) Muted("Records your microphone and everything this computer plays (the other people on Teams, Zoom, Meet and so on), then tells the voices apart. Tell everyone you are recording. Audio stays on this computer.")
+                    else Muted("Recording uses your default Windows microphone. Audio stays on this computer.")
                 } else {
+                    if (meetingMode) {
+                        Muted(if (sysOn) "Recording your microphone and the computer's audio." else (meetingNote ?: "Recording your microphone only."))
+                    }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        GhostButton(if (paused) "Resume" else "Pause", { paused = !paused; recorder.paused = paused })
+                        if (!meetingMode) GhostButton(if (paused) "Resume" else "Pause", { paused = !paused; recorder.paused = paused })
                         PrimaryButton("Stop and transcribe", { finish(true) })
                         GhostButton("Stop, transcribe later", { finish(false) })
                     }
@@ -217,6 +244,7 @@ fun TranscriptScreen(state: AppState, nav: Nav, id: String) {
             }
             Chip("Devanagari", !settings.hindiRoman) { state.update { it.copy(settings = settings.copy(hindiRoman = false)) } }
             Chip("Roman", settings.hindiRoman) { state.update { it.copy(settings = settings.copy(hindiRoman = true)) } }
+            GhostButton("Minutes of meeting", { nav.go(Screen.MinutesOf(id)) })
             Box {
                 PrimaryButton("Export ▾", { exportMenu = true })
                 DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {

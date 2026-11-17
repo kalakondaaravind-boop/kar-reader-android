@@ -23,6 +23,8 @@ fun main(args: Array<String>) {
             "books" -> { books(); println("BOOKS OK") }
             "seed" -> { seed(); println("SEED OK") }
             "speech" -> speech(args.drop(1))
+            "minutes" -> { minutesCheck(); println("MINUTES OK") }
+            "mix" -> { mixCheck(); println("MIX OK") }
             else -> { System.err.println("usage: books | seed | speech <audio> …"); exitProcess(2) }
         }
         exitProcess(0)
@@ -109,6 +111,80 @@ private fun books() {
     println("Data folder: ${Paths.root}")
 }
 
+private val demoMeetingLines = listOf(
+    Triple(0, 0L, "Today we will discuss the NPS survey rollout and the wallet share numbers for the quarter."),
+    Triple(0, 22_000L, "We agreed to develop a human plus AI survey offering for our key accounts."),
+    Triple(1, 41_000L, "Please invite the first line CBHs to the next meeting tomorrow."),
+    Triple(1, 63_000L, "I will share the Titan CSAT summary by Friday."),
+    Triple(0, 88_000L, "Aravind will prepare the proposal for the healthcare aggregator model by 16 Nov."),
+    Triple(1, 110_000L, "The Razorpay recovery plan needs a review next week, and we decided to include first line CBHs in the following meetings."),
+)
+
+private fun demoMeetingMeta(id: String, startMs: Long) =
+    TranscriptMeta(id, "Wallet share discussion", startMs + 150 * 60_000L, 150 * 60_000L, "$id.wav", "", "English", mapOf(0 to "Vishal Gurung", 1 to "Venky"), status = "done", startedAt = startMs, meeting = true)
+
+private fun meetingStart(): Long = java.util.Calendar.getInstance().apply { clear(); set(2026, java.util.Calendar.NOVEMBER, 11, 16, 0) }.timeInMillis
+
+private fun minutesCheck() {
+    val start = meetingStart()
+    val meta = demoMeetingMeta("minutes-check", start)
+    val lines = demoMeetingLines.map { (sp, at, text) -> Line(at, at + 15_000, sp, text) }
+    val m = MinutesBuilder.draft(meta, lines, Settings())
+    println("Meeting: ${m.meeting} · ${MinutesFormat.dateAndTime(m)} · attendees ${m.attendees}")
+    println("Agenda: ${m.agenda}")
+    println("Decisions: ${m.decisions}")
+    m.actions.forEach { println("Action: ${it.text} | ${it.owner} | ${it.target.ifBlank { "–" }} | ${it.status}") }
+    check(MinutesFormat.dateAndTime(m) == "11 Nov 2026, 04:00 PM (2 h 30)") { "date line was ${MinutesFormat.dateAndTime(m)}" }
+    check(m.attendees == listOf("Vishal Gurung", "Venky")) { "attendees were ${m.attendees}" }
+    check(m.agenda.isNotEmpty()) { "no agenda" }
+    check(m.decisions.any { it.contains("agreed", true) }) { "decision not found" }
+    val aravind = m.actions.firstOrNull { it.owner == "Aravind" || it.text.contains("healthcare") }
+    check(aravind != null && aravind.target == "16 Nov 2026") { "Aravind's action/date wrong: $aravind" }
+    check(m.actions.any { it.target == "12 Nov 2026" }) { "'tomorrow' was not turned into 12 Nov 2026" }
+    check(m.actions.any { it.target == "13 Nov 2026" }) { "'Friday' was not turned into 13 Nov 2026" }
+    check(MinutesBuilder.parseTarget("by 3rd December", start) == "3 Dec 2026")
+    check(MinutesBuilder.parseTarget("before 14/11", start) == "14 Nov 2026")
+    check(MinutesBuilder.parseTarget("nothing here", start) == "")
+    val html = MinutesExport.html(m)
+    for (needed in listOf("Hi All,", "minutes of the meeting held on 11 Nov 2026", "Particulars", "Attendees", "Agenda", "Discussion", "Key decisions", "Action points", "Responsibility", "Target date", "Colour key")) {
+        check(html.contains(needed)) { "export is missing “$needed”" }
+    }
+    check(MinutesExport.html(m, forWord = true).startsWith("<html")) { "word export malformed" }
+    check(MinutesExport.text(m).contains("Action points")) { "text export malformed" }
+    val out = File(Paths.root, "minutes-check.html").also { it.writeText(MinutesExport.page(m), Charsets.UTF_8) }
+    println("Wrote ${out.absolutePath}")
+}
+
+private fun mixCheck() {
+    val dir = File(Paths.root, "mix-check").also { it.mkdirs() }
+    fun tone(f: File, hz: Double, seconds: Int, amp: Float) = WavWriter(f).use { w ->
+        w.writeFloats(FloatArray(SPEECH_RATE * seconds) { (Math.sin(2 * Math.PI * hz * it / SPEECH_RATE) * amp).toFloat() })
+    }
+    val a = File(dir, "a.wav").also { tone(it, 220.0, 5, 0.4f) }
+    val b = File(dir, "b.wav").also { tone(it, 440.0, 7, 0.4f) }
+    val out = File(dir, "mix.wav")
+    MeetingMix.mix(a, b, out)
+    WavReader(out).use { r ->
+        println("Mixed length ${r.durationSec} s")
+        check(kotlin.math.abs(r.durationSec - 7f) < 0.1f) { "mixed length should follow the longer file" }
+        val early = r.read(1f, 2f).maxOf { kotlin.math.abs(it) }
+        val late = r.read(6f, 7f).maxOf { kotlin.math.abs(it) }
+        check(early > 0.5f) { "both voices should be present early on ($early)" }
+        check(late in 0.3f..0.4f) { "only the second voice should remain later ($late)" }
+    }
+    val solo = File(dir, "solo.wav"); MeetingMix.mix(a, null, solo)
+    check(solo.length() == a.length()) { "no system audio should copy the microphone file" }
+}
+
+private fun seedMeeting(state: AppState) {
+    val start = meetingStart()
+    val id = "demo-meeting"
+    val meta = demoMeetingMeta(id, start)
+    TranscriptFiles.save(id, demoMeetingLines.map { (sp, at, text) -> Line(at, at + 15_000, sp, text) })
+    val minutes = MinutesBuilder.draft(meta, TranscriptFiles.load(id), Settings()).copy(project = "Management reporting")
+    state.update { it.copy(transcripts = it.transcripts + meta, minutes = it.minutes + minutes) }
+}
+
 private fun seed() {
     val tmp = File(Paths.root, "seed-input").also { it.mkdirs() }
     val state = AppState()
@@ -133,6 +209,7 @@ private fun seed() {
             books = d.books.map { if (it.id == pdf.id) it.copy(status = "reading", lastOpenedAt = now, position = 1, units = 12) else it },
         )
     }
+    seedMeeting(state)
 }
 
 private fun speech(a: List<String>) {

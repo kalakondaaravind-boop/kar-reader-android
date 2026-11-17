@@ -47,6 +47,7 @@ sealed interface Screen {
     data object Stats : Screen
     data object Transcribe : Screen
     data class Transcript(val id: String) : Screen
+    data class MinutesOf(val id: String) : Screen
     data object Recording : Screen
     data object Bin : Screen
     data object Settings : Screen
@@ -66,6 +67,7 @@ private fun startScreen(nav: Nav, state: AppState) {
         "review" -> nav.go(Screen.Review)
         "stats" -> nav.go(Screen.Stats)
         "transcribe" -> nav.go(Screen.Transcribe)
+        "minutes" -> state.data.transcripts.firstOrNull { it.status == "done" }?.let { nav.go(Screen.MinutesOf(it.id)) }
         "transcript" -> state.data.transcripts.firstOrNull { it.status == "done" }?.let { nav.go(Screen.Transcript(it.id)) }
         "bin" -> nav.go(Screen.Bin)
         "settings" -> nav.go(Screen.Settings)
@@ -115,6 +117,7 @@ fun AppRoot(state: AppState, nav: Nav, jobs: TranscribeJobs) {
                     Screen.Stats -> StatsScreen(state)
                     Screen.Transcribe -> TranscribeScreen(state, nav, jobs)
                     is Screen.Transcript -> TranscriptScreen(state, nav, s.id)
+                    is Screen.MinutesOf -> MinutesScreen(state, nav, s.id)
                     Screen.Recording -> RecordingScreen(state, nav, jobs)
                     Screen.Bin -> BinScreen(state)
                     Screen.Settings -> SettingsScreen(state)
@@ -151,7 +154,7 @@ private fun Sidebar(state: AppState, nav: Nav, jobs: TranscribeJobs) {
         NavItem("Notes & highlights", "Ctrl+2", nav.current is Screen.Notes) { nav.go(Screen.Notes) }
         NavItem(if (due > 0) "Review  ($due due)" else "Review", "Ctrl+3", nav.current is Screen.Review) { nav.go(Screen.Review) }
         NavItem("Statistics", "Ctrl+4", nav.current is Screen.Stats) { nav.go(Screen.Stats) }
-        NavItem(if (jobs.busy) "Transcribe  (working…)" else "Transcribe", "Ctrl+5", nav.current is Screen.Transcribe || nav.current is Screen.Transcript || nav.current is Screen.Recording) { nav.go(Screen.Transcribe) }
+        NavItem(if (jobs.busy) "Transcribe  (working…)" else "Transcribe", "Ctrl+5", nav.current is Screen.Transcribe || nav.current is Screen.Transcript || nav.current is Screen.MinutesOf || nav.current is Screen.Recording) { nav.go(Screen.Transcribe) }
         NavItem("Recycle bin", "Ctrl+6", nav.current is Screen.Bin) { nav.go(Screen.Bin) }
         Box(Modifier.weight(1f))
         NavItem("Settings", "Ctrl+,", nav.current is Screen.Settings) { nav.go(Screen.Settings) }

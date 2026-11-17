@@ -112,6 +112,12 @@ jobs:
           KAR_DEBUG: "1"
         run: ./gradlew -p windows smoke "-PsmokeArgs=speech build/test-audio/hi-hindi.wav auto 0 expect-devanagari" --stacktrace
 
+      - name: Check meeting minutes (draft, dates, email layout)
+        run: ./gradlew -p windows smoke -PsmokeArgs=minutes --stacktrace
+
+      - name: Check meeting audio mixing
+        run: ./gradlew -p windows smoke -PsmokeArgs=mix --stacktrace
+
       - name: Demo data for screenshots
         run: ./gradlew -p windows smoke -PsmokeArgs=seed --stacktrace
 
@@ -127,7 +133,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path shots | Out-Null
           $env:KAR_DATA_DIR = (Resolve-Path "windows/build/smoke-data").Path
           $env:KAR_WINDOW = "1180x740"
-          foreach ($screen in "library", "reader", "reader-epub", "notes", "review", "stats", "transcribe", "transcript", "settings") {
+          foreach ($screen in "library", "reader", "reader-epub", "notes", "review", "stats", "transcribe", "transcript", "minutes", "settings") {
             $env:KAR_START = $screen
             $p = Start-Process -FilePath $exe.FullName -PassThru
             Start-Sleep -Seconds 14

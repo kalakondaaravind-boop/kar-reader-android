@@ -76,6 +76,7 @@ object Backup {
                             cards = union(local.cards, incoming.cards.map { it.copy(bookId = it.bookId?.let(::r)) }) { it.id },
                             sessions = local.sessions + incoming.sessions.filter { s -> local.sessions.none { it.startedAt == s.startedAt && it.durationMs == s.durationMs } }.map { it.copy(bookId = r(it.bookId)) },
                             transcripts = union(local.transcripts, incoming.transcripts.map { it.copy(bookId = it.bookId?.let(::r)) }) { it.id },
+                            minutes = union(local.minutes, incoming.minutes) { it.transcriptId },
                         )
                     }
                 }
