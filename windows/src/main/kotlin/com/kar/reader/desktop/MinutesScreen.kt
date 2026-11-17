@@ -42,6 +42,7 @@ fun MinutesScreen(state: AppState, nav: Nav, id: String) {
     var agendaText by remember(id) { mutableStateOf(m.agenda.joinToString("\n")) }
     var decisionsText by remember(id) { mutableStateOf(m.decisions.joinToString("\n")) }
     var redo by remember { mutableStateOf(false) }
+    var teams by remember { mutableStateOf(false) }
 
     fun change(next: Minutes) { m = next.copy(edited = true) }
     // Save a moment after the last keystroke, so typing doesn't rewrite the data file every character.
@@ -58,6 +59,7 @@ fun MinutesScreen(state: AppState, nav: Nav, id: String) {
                 val d = MinutesBuilder.draft(meta, TranscriptFiles.load(id), settings); m = d
                 whenText = MinutesFormat.dayTime(d.startedAt); attendeesText = d.attendees.joinToString(", "); agendaText = d.agenda.joinToString("\n"); decisionsText = d.decisions.joinToString("\n")
             } })
+            GhostButton("From Teams calendar", { teams = true })
             GhostButton("Copy for email", {
                 Toolkit.getDefaultToolkit().systemClipboard.setContents(HtmlSelection(MinutesExport.html(m), MinutesExport.text(m)), null)
                 state.toast("Copied. Paste it into your email.")
@@ -134,6 +136,11 @@ fun MinutesScreen(state: AppState, nav: Nav, id: String) {
             Muted("Status colours when sent: Due today (amber), Initiated (blue), Open (grey), Closed/Complete (green).")
         }
     }
+    if (teams) TeamsMeetingsDialog(state, onPick = { mt ->
+        change(m.copy(meeting = mt.subject, startedAt = mt.startMs, durationMs = (mt.endMs - mt.startMs).coerceAtLeast(0), attendees = mt.attendees.ifEmpty { m.attendees }))
+        whenText = MinutesFormat.dayTime(mt.startMs); attendeesText = (mt.attendees.ifEmpty { m.attendees }).joinToString(", ")
+        teams = false
+    }, onDismiss = { teams = false })
     if (redo) ConfirmDialog(
         "Draft again?", "Your edits to these minutes will be replaced by a new draft from the transcript.", "Replace my edits", danger = true,
         onConfirm = {

@@ -22,7 +22,7 @@ object TranscriptFiles {
     fun deleteForever(state: AppState, t: TranscriptMeta) {
         state.update { d -> d.copy(transcripts = d.transcripts.filter { it.id != t.id }) }
         file(t.id).delete()
-        File(Paths.recordings, t.audio).delete()
+        if (t.audio.isNotBlank()) File(Paths.recordings, t.audio).delete()
     }
 }
 

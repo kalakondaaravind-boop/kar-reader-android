@@ -97,6 +97,8 @@ data class Settings(
     val epubSerif: Boolean = true,
     val removeFillers: Boolean = false,
     val ttsRate: Int = 0,               // Windows speech rate, -10..10
+    val msClientId: String = "",        // Azure app registration for the Teams calendar (optional)
+    val msTenant: String = "organizations",
 )
 
 @Serializable

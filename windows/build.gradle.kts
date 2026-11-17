@@ -62,7 +62,7 @@ compose.desktop {
             vendor = "KAR READER"
             description = "Offline PDF and EPUB reading, research notes and speech transcription."
             appResourcesRootDir.set(project.layout.projectDirectory.dir("resources"))
-            modules("java.sql", "jdk.unsupported", "java.naming", "java.desktop", "java.management")
+            modules("java.sql", "jdk.unsupported", "java.naming", "java.desktop", "java.management", "java.net.http", "jdk.crypto.ec")
             windows {
                 menuGroup = "KAR READER"
                 shortcut = true

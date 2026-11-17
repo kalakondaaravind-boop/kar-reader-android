@@ -24,6 +24,7 @@ fun main(args: Array<String>) {
             "seed" -> { seed(); println("SEED OK") }
             "speech" -> speech(args.drop(1))
             "minutes" -> { minutesCheck(); println("MINUTES OK") }
+            "teams" -> { teamsCheck(); println("TEAMS OK") }
             "mix" -> { mixCheck(); println("MIX OK") }
             else -> { System.err.println("usage: books | seed | speech <audio> …"); exitProcess(2) }
         }
@@ -153,6 +154,25 @@ private fun minutesCheck() {
     check(MinutesExport.text(m).contains("Action points")) { "text export malformed" }
     val out = File(Paths.root, "minutes-check.html").also { it.writeText(MinutesExport.page(m), Charsets.UTF_8) }
     println("Wrote ${out.absolutePath}")
+}
+
+private fun teamsCheck() {
+    val vtt = "WEBVTT\n\n3f2a-1\n00:00:01.000 --> 00:00:04.500\n<v Vishal Gurung>Today we will discuss the NPS rollout.</v>\n\n3f2a-2\n00:00:04.600 --> 00:00:07.000\n<v Vishal Gurung>We agreed to start next month.</v>\n\n3f2a-3\n00:01:10.000 --> 00:01:14.000\n<v Venky>I will share the summary by Friday.</v>\n"
+    val r = VttImport.parse(vtt)
+    println("VTT: ${r.lines.size} lines, speakers ${r.speakers}, ${r.durationMs} ms")
+    check(r.speakers == listOf("Vishal Gurung", "Venky")) { "speakers ${r.speakers}" }
+    check(r.lines.size == 2) { "consecutive lines by one speaker should merge, got ${r.lines.size}" }
+    check(r.lines[0].text.contains("agreed") && r.lines[1].speaker == 1 && r.lines[1].startMs == 70_000L) { "lines wrong: ${r.lines}" }
+    val json = """{"value":[{"subject":"Wallet share discussion","start":{"dateTime":"2026-11-11T10:30:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2026-11-11T13:00:00.0000000","timeZone":"UTC"},"attendees":[{"emailAddress":{"name":"Mandeep Bhatia","address":"m@x.com"}},{"emailAddress":{"name":"Venky","address":"v@x.com"}}]}]}"""
+    val ms = TeamsGraph.parseMeetings(kotlinx.serialization.json.Json.parseToJsonElement(json) as kotlinx.serialization.json.JsonObject)
+    check(ms.size == 1 && ms[0].subject == "Wallet share discussion" && ms[0].attendees.size == 2 && ms[0].endMs - ms[0].startMs == 150 * 60_000L) { "calendar parse wrong" }
+    val state = AppState()
+    val f = File(Paths.root, "teams-check.vtt").also { it.writeText(vtt, Charsets.UTF_8) }
+    check(VttImport.importInto(state, f).isEmpty()) { "import failed" }
+    val t = state.data.transcripts.last()
+    val m = MinutesBuilder.draft(t, TranscriptFiles.load(t.id), Settings())
+    println("Teams import → ${t.title}: attendees ${m.attendees}, actions ${m.actions.map { it.owner + " " + it.target }}")
+    check(m.attendees == listOf("Vishal Gurung", "Venky")) { "minutes attendees ${m.attendees}" }
 }
 
 private fun mixCheck() {

@@ -81,6 +81,11 @@ fun SettingsScreen(state: AppState) {
             }
             Muted(if (Tts.available) "Uses the voices installed in Windows. Nothing is sent anywhere." else "Read aloud works on Windows only.")
         }
+        Section("Microsoft Teams") {
+            Muted("Optional. Importing a Teams transcript (.vtt) needs nothing here. To fill minutes from your Teams calendar, you or your IT team register an app in Microsoft Entra (public client, delegated permission Calendars.Read, “Allow public client flows” on) and paste its Application (client) ID. This is the only feature that uses the internet.")
+            OutlinedTextField(s.msClientId, { v -> set { it.copy(msClientId = v.trim()) } }, label = { Text("Application (client) ID") }, singleLine = true, modifier = Modifier.width(420.dp))
+            OutlinedTextField(s.msTenant, { v -> set { it.copy(msTenant = v.trim()) } }, label = { Text("Tenant (organizations, or your tenant ID)") }, singleLine = true, modifier = Modifier.width(420.dp))
+        }
         Section("Your data") {
             Muted("Everything lives in ${Paths.root.absolutePath}")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

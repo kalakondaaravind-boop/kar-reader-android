@@ -87,6 +87,12 @@ fun TranscribeScreen(state: AppState, nav: Nav, jobs: TranscribeJobs) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Title("Transcribe", Modifier.weight(1f))
             GhostButton("Import audio…", { importFiles(pickFiles("Import audio to transcribe", "WAV or MP3 audio", "wav", "mp3", "aiff", "au")) })
+            GhostButton("Import Teams transcript…", {
+                pickFiles("Import a Teams transcript", "Teams transcript (.vtt)", "vtt", multi = false).firstOrNull()?.let { f ->
+                    val err = runCatching { VttImport.importInto(state, f) }.getOrElse { "Couldn't read that file: ${it.message}" }
+                    if (err.isNotEmpty()) state.toast(err) else state.toast("Imported. Open it and choose “Minutes of meeting”.")
+                }
+            })
             PrimaryButton("● Record", { nav.go(Screen.Recording) })
         }
         Panel(Modifier.fillMaxWidth()) {

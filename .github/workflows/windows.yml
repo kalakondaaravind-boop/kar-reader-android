@@ -117,6 +117,9 @@ jobs:
       - name: Check meeting minutes (draft, dates, email layout)
         run: ./gradlew -p windows smoke -PsmokeArgs=minutes --stacktrace
 
+      - name: Check Teams transcript and calendar import
+        run: ./gradlew -p windows smoke -PsmokeArgs=teams --stacktrace
+
       - name: Check meeting audio mixing
         run: ./gradlew -p windows smoke -PsmokeArgs=mix --stacktrace
 
