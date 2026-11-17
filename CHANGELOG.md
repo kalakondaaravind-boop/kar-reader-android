@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.1 — development build
+- Clean modern blue theme (light and dark); content kept below the status bar.
+
 ## 0.4.0 — development build
 - Automatic transcription recognizes English, Hindi and Hinglish; each piece is routed by language
   (Whisper base for English, Omnilingual ASR for Hindi/Hinglish). Other languages only when chosen by hand.
