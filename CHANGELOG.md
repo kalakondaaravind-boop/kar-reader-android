@@ -1,5 +1,10 @@
 # Changelog
 
+## Windows 0.5.0 — first Windows build (pre-release)
+- Full KAR READER for Windows: library, PDF/EPUB reader, notes, review cards, statistics, transcription, recycle bin, backup.
+- Meeting recording (microphone + computer audio), Minutes of Meeting in the requested layout, Teams transcript (.vtt) import and optional Teams calendar sign-in.
+- Not yet tried on a real PC with a microphone or live call; see docs/releases/windows-v0.5.0.md.
+
 ## 0.4.1 — development build
 - Clean modern blue theme (light and dark); content kept below the status bar.
 
