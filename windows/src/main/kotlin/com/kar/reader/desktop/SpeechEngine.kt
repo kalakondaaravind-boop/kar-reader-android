@@ -133,6 +133,14 @@ class SpeechEngine(private val windowSec: Float = WINDOW_SEC) {
         return OfflineRecognizerConfig.builder().setOfflineModelConfig(model).build()
     }
 
+    /** The Java API reports the language's English name (e.g. "Hindi"); the rest of the engine works with codes. */
+    private fun toCode(result: String): String {
+        val r = result.trim()
+        if (r.isEmpty()) return ""
+        WhisperLanguages.all.firstOrNull { it.first.equals(r, true) || it.second.equals(r, true) }?.let { return it.first }
+        return when (r.lowercase()) { "burmese" -> "my"; "mandarin" -> "zh"; else -> r.lowercase() }
+    }
+
     private fun identifyLanguages(reader: WavReader, chunks: List<SpeechSpan>, isCancelled: () -> Boolean, onEach: () -> Unit): List<String> {
         val lid = SpokenLanguageIdentification(
             SpokenLanguageIdentificationConfig.builder()
@@ -146,7 +154,7 @@ class SpeechEngine(private val windowSec: Float = WINDOW_SEC) {
                     val stream = lid.createStream()
                     try {
                         stream.acceptWaveform(reader.read(c.start, c.end), SPEECH_RATE)
-                        lid.compute(stream).trim()
+                        toCode(lid.compute(stream).trim())
                     } finally {
                         stream.release()
                     }
