@@ -80,7 +80,9 @@ jobs:
         run: |
           $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
           New-Item -ItemType Directory -Force -Path windows/resources/common/tools | Out-Null
-          & $csc /nologo /target:exe /platform:x64 /optimize+ /out:windows/resources/common/tools/kar-loopback.exe windows/native/KarLoopback.cs
+          $src = (Resolve-Path "windows\native\KarLoopback.cs").Path
+          $out = Join-Path (Resolve-Path "windows\resources\common\tools").Path "kar-loopback.exe"
+          & $csc /nologo /target:exe /platform:x64 /optimize+ "/out:$out" "$src"
           if ($LASTEXITCODE -ne 0) { throw "csc failed" }
           Get-Item windows/resources/common/tools/kar-loopback.exe | Format-List Name, Length
 
