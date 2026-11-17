@@ -43,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.kar.reader.core.designsystem.KarColors
 import com.kar.reader.core.designsystem.EmptyState
 import com.kar.reader.core.designsystem.GlossyButton
 import com.kar.reader.core.designsystem.GlossyKind
