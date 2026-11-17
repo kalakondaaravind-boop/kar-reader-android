@@ -29,6 +29,7 @@ private fun parseWhen(text: String): Long? = listOf("d MMM yyyy, hh:mm a", "d MM
     runCatching { SimpleDateFormat(f, Locale.ENGLISH).apply { isLenient = false }.parse(text.trim())?.time }.getOrNull()
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MinutesScreen(state: AppState, nav: Nav, id: String) {
     val meta = state.data.transcripts.firstOrNull { it.id == id }
@@ -52,9 +53,11 @@ fun MinutesScreen(state: AppState, nav: Nav, id: String) {
     }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = { nav.go(Screen.Transcript(id)) }) { Text("← Transcript") }
             Title("Minutes of meeting", Modifier.weight(1f))
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             GhostButton("Draft again", { if (m.edited) redo = true else {
                 val d = MinutesBuilder.draft(meta, TranscriptFiles.load(id), settings); m = d
                 whenText = MinutesFormat.dayTime(d.startedAt); attendeesText = d.attendees.joinToString(", "); agendaText = d.agenda.joinToString("\n"); decisionsText = d.decisions.joinToString("\n")

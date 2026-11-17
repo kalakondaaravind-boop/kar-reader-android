@@ -67,8 +67,8 @@ private fun startScreen(nav: Nav, state: AppState) {
         "review" -> nav.go(Screen.Review)
         "stats" -> nav.go(Screen.Stats)
         "transcribe" -> nav.go(Screen.Transcribe)
-        "minutes" -> state.data.transcripts.firstOrNull { it.status == "done" }?.let { nav.go(Screen.MinutesOf(it.id)) }
-        "transcript" -> state.data.transcripts.firstOrNull { it.status == "done" }?.let { nav.go(Screen.Transcript(it.id)) }
+        "minutes" -> (state.data.transcripts.firstOrNull { it.id == "demo-meeting" } ?: state.data.transcripts.firstOrNull { it.status == "done" })?.let { nav.go(Screen.MinutesOf(it.id)) }
+        "transcript" -> (state.data.transcripts.firstOrNull { it.id == "demo-meeting" } ?: state.data.transcripts.firstOrNull { it.status == "done" })?.let { nav.go(Screen.Transcript(it.id)) }
         "bin" -> nav.go(Screen.Bin)
         "settings" -> nav.go(Screen.Settings)
     }

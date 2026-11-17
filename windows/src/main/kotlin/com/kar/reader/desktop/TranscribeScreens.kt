@@ -213,6 +213,7 @@ fun RecordingScreen(state: AppState, nav: Nav, jobs: TranscribeJobs) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TranscriptScreen(state: AppState, nav: Nav, id: String) {
     val meta = state.data.transcripts.firstOrNull { it.id == id }
@@ -273,7 +274,7 @@ fun TranscriptScreen(state: AppState, nav: Nav, id: String) {
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically) {
             if (clip != null) {
                 PrimaryButton(if (playing) "❚❚ Pause" else "▶ Play", { if (playing) { clip.stop(); playing = false } else playFrom(clip.microsecondPosition / 1000) })
                 Muted(TranscriptText.clock(nowMs))
@@ -284,7 +285,7 @@ fun TranscriptScreen(state: AppState, nav: Nav, id: String) {
                 Chip("${speakerName(meta, sp)}  ${shares[sp] ?: 0}%", speakerFilter == sp) { speakerFilter = if (speakerFilter == sp) null else sp }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp), itemVerticalAlignment = Alignment.CenterVertically) {
             Muted("Click a line to play from it. Rename or merge speakers:")
             speakersInUse.forEach { sp ->
                 TextButton(onClick = { renaming = sp }) { Text("Rename ${speakerName(meta, sp)}") }

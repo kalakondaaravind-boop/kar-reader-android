@@ -137,7 +137,7 @@ jobs:
           $exe = Get-ChildItem "windows/build/compose/binaries/main/app" -Recurse -Filter "KAR READER.exe" | Select-Object -First 1
           New-Item -ItemType Directory -Force -Path shots | Out-Null
           $env:KAR_DATA_DIR = (Resolve-Path "windows/build/smoke-data").Path
-          $env:KAR_WINDOW = "1180x740"
+          $env:KAR_WINDOW = "980x680"
           foreach ($screen in "library", "reader", "reader-epub", "notes", "review", "stats", "transcribe", "transcript", "minutes", "settings") {
             $env:KAR_START = $screen
             $p = Start-Process -FilePath $exe.FullName -PassThru
