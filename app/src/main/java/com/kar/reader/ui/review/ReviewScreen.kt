@@ -125,7 +125,7 @@ fun ReviewScreen(vm: ReviewViewModel = hiltViewModel()) {
                 Text("${state.due.size} due · ${state.reviewedToday} reviewed today", Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (state.streak > 0) Text("${state.streak}-day reading streak", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
             }
-            GlossyProgress(if (sessionTotal == 0) 1f else state.reviewedToday.toFloat() / sessionTotal, Modifier.fillMaxWidth().padding(vertical = 10.dp))
+            GlossyProgress(if (sessionTotal == 0) 0f else state.reviewedToday.toFloat() / sessionTotal, Modifier.fillMaxWidth().padding(vertical = 10.dp))
             Spacer(Modifier.height(12.dp))
             when {
                 !state.loaded -> Unit

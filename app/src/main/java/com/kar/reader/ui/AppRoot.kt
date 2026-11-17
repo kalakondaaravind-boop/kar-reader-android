@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -197,7 +200,7 @@ private fun MainNavigation(activity: FragmentActivity, settings: AppSettings, de
                     selected = route == item.route,
                     onClick = { nav.navigateTop(item.route) },
                     icon = { Icon(item.icon, contentDescription = null) },
-                    label = { Text(item.label) },
+                    label = { Text(item.label, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, fontSize = 11.sp) },
                 )
             }
         },
@@ -205,6 +208,8 @@ private fun MainNavigation(activity: FragmentActivity, settings: AppSettings, de
         val eink = settings.einkMode
         NavHost(
             navController = nav,
+            // Keep content clear of the status bar (the app draws edge to edge).
+            modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
             startDestination = Routes.HOME,
             enterTransition = { if (eink) EnterTransition.None else fadeIn() },
             exitTransition = { if (eink) ExitTransition.None else fadeOut() },
