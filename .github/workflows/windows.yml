@@ -85,6 +85,8 @@ jobs:
         run: ./gradlew -p windows smoke "-PsmokeArgs=speech build/test-audio/two-speakers-en.wav auto 2" --stacktrace
 
       - name: Check the speech engine on Windows (Hindi)
+        env:
+          KAR_DEBUG: "1"
         run: ./gradlew -p windows smoke "-PsmokeArgs=speech build/test-audio/hi-hindi.wav auto 0 expect-devanagari" --stacktrace
 
       - name: Demo data for screenshots

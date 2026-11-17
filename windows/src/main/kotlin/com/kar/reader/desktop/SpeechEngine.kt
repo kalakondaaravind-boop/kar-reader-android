@@ -75,7 +75,9 @@ class SpeechEngine(private val windowSec: Float = WINDOW_SEC) {
 
         val languages: List<String> = if (auto) {
             // Automatic: English, Hindi or Hinglish only. Other languages are written only when chosen by hand.
-            val detected = identifyLanguages(reader, chunks, isCancelled) { step() }.map { LanguageRouting.automatic(it) }
+            val raw = identifyLanguages(reader, chunks, isCancelled) { step() }
+            if (System.getenv("KAR_DEBUG") != null) System.err.println("LID raw: $raw chunks=${chunks.map { "%.1f-%.1f".format(it.start, it.end) }}")
+            val detected = raw.map { LanguageRouting.automatic(it) }
             LanguageRouting.smooth(chunks, detected)
         } else List(chunks.size) { chosen }
         val routes = languages.map { LanguageRouting.route(it, hasOmni) }
