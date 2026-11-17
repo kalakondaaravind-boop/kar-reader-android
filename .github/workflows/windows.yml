@@ -1,0 +1,168 @@
+name: Windows
+
+# Builds KAR READER for Windows: checks the app on a real Windows machine (reading books, the speech engine, screenshots),
+# then packages the installer. Pushing to the "windows-release" branch also publishes it as a GitHub Release.
+on:
+  push:
+    branches: [ windows-ci, windows-release ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  prepare:
+    name: Download speech engine and models
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: .speech-cache
+          key: speech-win-${{ hashFiles('gradle/libs.versions.toml', 'scripts/fetch-windows-speech.sh', 'scripts/speech-models.sha256') }}
+      - run: chmod +x scripts/*.sh && ./scripts/fetch-windows-speech.sh --test-audio
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win-resources
+          path: |
+            windows/libs/*.jar
+            windows/resources/common/models
+            windows/build/test-audio
+          compression-level: 0
+          retention-days: 1
+
+  build:
+    name: Build, check and package (Windows)
+    needs: prepare
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: win-resources
+          path: ${{ github.workspace }}/windows-resources
+
+      - name: Put engine and models in place
+        run: |
+          mkdir -p windows/libs windows/resources/common windows/build
+          cp -r windows-resources/libs/*.jar windows/libs/ 2>/dev/null || cp -r windows-resources/windows/libs/*.jar windows/libs/
+          ls -R windows-resources | head -40
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Find the downloaded folders
+        run: |
+          # upload-artifact keeps the common parent of the listed paths, so find them wherever they landed
+          MODELS=$(find windows-resources -type d -name models | head -1)
+          AUDIO=$(find windows-resources -type d -name test-audio | head -1)
+          JARS=$(find windows-resources -name 'sherpa-onnx-jvm-*.jar' | head -1)
+          echo "models=$MODELS audio=$AUDIO jars=$JARS"
+          mkdir -p windows/resources/common windows/build windows/libs
+          rm -rf windows/resources/common/models && cp -r "$MODELS" windows/resources/common/models
+          cp -r "$AUDIO" windows/build/test-audio
+          cp "$(dirname "$JARS")"/*.jar windows/libs/
+          ls -l windows/libs windows/resources/common/models windows/build/test-audio
+
+      - name: Compile
+        run: ./gradlew -p windows compileKotlin --stacktrace
+
+      - name: Check reading and storage (generated PDF and EPUB)
+        run: ./gradlew -p windows smoke -PsmokeArgs=books --stacktrace
+
+      - name: Check the speech engine on Windows (English, two speakers)
+        run: ./gradlew -p windows smoke "-PsmokeArgs=speech windows/build/test-audio/two-speakers-en.wav auto 2" --stacktrace
+
+      - name: Check the speech engine on Windows (Hindi)
+        run: ./gradlew -p windows smoke "-PsmokeArgs=speech windows/build/test-audio/hi-hindi.wav auto 0 expect-devanagari" --stacktrace
+
+      - name: Demo data for screenshots
+        run: ./gradlew -p windows smoke -PsmokeArgs=seed --stacktrace
+
+      - name: Build the app folder
+        run: ./gradlew -p windows createDistributable --stacktrace
+
+      - name: Screenshots of the real app
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $exe = Get-ChildItem "windows/build/compose/binaries/main/app" -Recurse -Filter "KAR READER.exe" | Select-Object -First 1
+          New-Item -ItemType Directory -Force -Path shots | Out-Null
+          $env:KAR_DATA_DIR = (Resolve-Path "windows/build/smoke-data").Path
+          $env:KAR_WINDOW = "1180x740"
+          foreach ($screen in "library", "reader", "reader-epub", "notes", "review", "stats", "transcribe", "transcript", "settings") {
+            $env:KAR_START = $screen
+            $p = Start-Process -FilePath $exe.FullName -PassThru
+            Start-Sleep -Seconds 14
+            $b = [System.Windows.Forms.SystemInformation]::VirtualScreen
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save("shots/$screen.png")
+            $g.Dispose(); $bmp.Dispose()
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            Get-Process -Name "KAR READER" -ErrorAction SilentlyContinue | Stop-Process -Force
+            Start-Sleep -Seconds 2
+          }
+          Get-ChildItem shots
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-screenshots
+          path: shots
+          if-no-files-found: ignore
+
+      - name: Make sure the installer tools are there
+        run: |
+          if [ -d "/c/Program Files (x86)/WiX Toolset v3.14/bin" ]; then echo "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin" >> "$GITHUB_PATH"; else echo "::warning::WiX not at the expected path"; fi
+
+      - name: Package the installer
+        run: ./gradlew -p windows packageExe packageMsi --stacktrace
+
+      - name: Collect files
+        run: |
+          V=$(sed -n 's/^version = "\(.*\)"/\1/p' windows/build.gradle.kts)
+          mkdir -p dist
+          EXE=$(find windows/build/compose/binaries/main/exe -name '*.exe' | head -1)
+          MSI=$(find windows/build/compose/binaries/main/msi -name '*.msi' | head -1)
+          cp "$EXE" "dist/KAR-READER-Windows-$V-Setup.exe"
+          cp "$MSI" "dist/KAR-READER-Windows-$V.msi"
+          (cd dist && sha256sum * > SHA256SUMS-windows.txt)
+          ls -l dist; cat dist/SHA256SUMS-windows.txt
+          echo "KAR_WIN_VERSION=$V" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist
+          compression-level: 0
+          retention-days: 7
+
+      - name: Publish to the GitHub Release
+        if: github.ref == 'refs/heads/windows-release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$KAR_WIN_VERSION
+          TAG="windows-v$V"
+          NOTES=docs/releases/windows-v$V.md
+          [ -f "$NOTES" ] || NOTES=/dev/null
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "KAR READER for Windows $V" --notes-file "$NOTES" --prerelease
+          fi
+          echo "::notice title=Release::https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"

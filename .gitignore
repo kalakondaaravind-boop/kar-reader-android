@@ -19,3 +19,10 @@ keystore.properties
 /app/libs/
 /app/src/main/assets/models/
 /.speech-cache/
+
+# Windows app: downloaded at build time (scripts/fetch-windows-speech.sh)
+/windows/libs/*.jar
+/windows/resources/common/models/
+/windows/build/
+/windows/.gradle/
+/.speech-cache/
