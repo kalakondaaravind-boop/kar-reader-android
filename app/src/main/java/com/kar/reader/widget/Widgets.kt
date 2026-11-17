@@ -73,10 +73,10 @@ object DeepLinks {
         }
 }
 
-private val Navy = Color(0xFF1B3557)
-private val Gold = Color(0xFFE0A33A)
-private val Cream = Color(0xFFF5EBDC)
-private val Mist = Color(0xFFDCE5F0)
+private val Navy = Color(0xFF1A5CFF)
+private val Gold = Color(0xFF00A3FF)
+private val Cream = Color(0xFFF6F8FC)
+private val Mist = Color(0xFFE8EFFF)
 
 @Composable
 private fun Label(text: String, size: Int, color: Color, bold: Boolean = false, maxLines: Int = 1) {

@@ -104,7 +104,7 @@ fun CitationSheet(book: BookEntity, quote: String?, location: String?, initialSt
                 Text("This EPUB has no fixed page numbers, so the chapter is used as the location.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                GlossyButton("Copy reference", onClick = { clipboard.setText(AnnotatedString(reference)); copied = "Reference copied" }, kind = GlossyKind.PEARL, icon = Icons.Filled.ContentCopy, modifier = Modifier.weight(1f))
+                GlossyButton("Copy reference", onClick = { clipboard.setText(AnnotatedString(reference)); copied = "Reference copied" }, kind = GlossyKind.SECONDARY, icon = Icons.Filled.ContentCopy, modifier = Modifier.weight(1f))
                 if (quote != null) {
                     GlossyButton("Copy quote", onClick = { clipboard.setText(AnnotatedString(Citations.quoteWithCitation(quote, source, style, location))); copied = "Quote and citation copied" }, icon = Icons.Filled.ContentCopy, modifier = Modifier.weight(1f))
                 }

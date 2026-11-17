@@ -153,7 +153,7 @@ fun NoteEditorScreen(onBack: () -> Unit, vm: NoteEditorViewModel = hiltViewModel
                         Spacer(Modifier.height(8.dp))
                         GlossyButton("Restore this version", onClick = {
                             vm.restore(v); title = v.title; body = v.body; showHistory = false
-                        }, kind = GlossyKind.GOLD, compact = true)
+                        }, kind = GlossyKind.ACCENT, compact = true)
                     }
                 }
             }

@@ -69,9 +69,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-enum class GlossyKind { PRIMARY, GOLD, PEARL, DANGER }
+enum class GlossyKind { PRIMARY, ACCENT, SECONDARY, DANGER }
 
-/** Bevelled, glossy button from the KAR READER design. Renders flat with a black outline in e-ink mode. */
+/** Primary, accent, secondary and danger buttons with soft depth. Renders flat with a black outline in e-ink mode. */
 @Composable
 fun GlossyButton(
     text: String,
@@ -87,27 +87,33 @@ fun GlossyButton(
     val (brush, content, border) = when {
         style.eink -> Triple(Brush.verticalGradient(listOf(Color.White, Color.White)), Color.Black, Color.Black)
         kind == GlossyKind.PRIMARY -> Triple(
-            Brush.verticalGradient(0f to Color(0xFF4C7BBA), 0.48f to Color(0xFF2A4D7C), 0.52f to Color(0xFF1A3354), 1f to KarColors.Navy),
-            Color.White, Color(0xFF10233D),
+            Brush.verticalGradient(listOf(if (style.dark) Color(0xFF4F8CFF) else Color(0xFF2E6BFF), if (style.dark) Color(0xFF2F6BF0) else KarColors.Primary)),
+            Color.White, if (style.dark) Color(0xFF3D78F5) else KarColors.PrimaryDeep.copy(alpha = 0.6f),
         )
-        kind == GlossyKind.GOLD -> Triple(
-            Brush.verticalGradient(0f to KarColors.GoldLight, 0.5f to Color(0xFFE8AE45), 0.51f to Color(0xFFD6922A), 1f to KarColors.Gold),
-            Color(0xFF2A1A05), Color(0xFF8A5A12),
+        kind == GlossyKind.ACCENT -> Triple(
+            Brush.linearGradient(listOf(KarColors.Accent, KarColors.Primary)),
+            Color.White, KarColors.AccentDeep.copy(alpha = 0.5f),
         )
         kind == GlossyKind.DANGER -> Triple(
-            Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFFBE6E1))), Color(0xFF8E2412), Color(0xFFE3B4A9),
+            Brush.verticalGradient(listOf(if (style.dark) Color(0xFF2A1A22) else Color.White, if (style.dark) Color(0xFF2A1A22) else Color(0xFFFFF5F5))),
+            if (style.dark) Color(0xFFFF8A8E) else Color(0xFFC62828), if (style.dark) Color(0xFF5A2A33) else Color(0xFFF3C7C9),
         )
-        style.dark -> Triple(Brush.verticalGradient(listOf(Color(0xFF3A414D), Color(0xFF262B34))), Color(0xFFECE7DD), Color(0xFF4A505B))
-        else -> Triple(Brush.verticalGradient(listOf(Color.White, Color(0xFFECE5D8))), KarColors.Navy, Color(0xFFCFC5B3))
+        style.dark -> Triple(Brush.verticalGradient(listOf(KarColors.DarkSurfaceHigh, KarColors.DarkSurfaceHigh)), KarColors.DarkInk, KarColors.DarkBorder)
+        else -> Triple(Brush.verticalGradient(listOf(Color.White, Color.White)), KarColors.Primary, KarColors.Border)
     }
     Row(
         modifier = modifier
             .defaultMinSize(minHeight = if (compact) 40.dp else 48.dp)
-            .then(if (style.glossy && enabled) Modifier.shadow(if (compact) 3.dp else 6.dp, shape, clip = false) else Modifier)
+            .then(
+                if (style.glossy && enabled) Modifier.shadow(
+                    if (kind == GlossyKind.PRIMARY || kind == GlossyKind.ACCENT) (if (compact) 2.dp else 4.dp) else 1.dp, shape, clip = false,
+                    ambientColor = KarColors.Primary.copy(alpha = 0.25f), spotColor = KarColors.Primary.copy(alpha = 0.3f),
+                ) else Modifier,
+            )
             .clip(shape)
             .background(brush)
             .border(BorderStroke(if (style.eink) 2.dp else 1.dp, border), shape)
-            .then(if (style.glossy) Modifier.background(Brush.verticalGradient(0f to Color.White.copy(alpha = 0.22f), 0.45f to Color.Transparent)) else Modifier)
+            .then(if (style.glossy && (kind == GlossyKind.PRIMARY || kind == GlossyKind.ACCENT)) Modifier.background(Brush.verticalGradient(0f to Color.White.copy(alpha = 0.10f), 0.5f to Color.Transparent)) else Modifier)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
             .padding(horizontal = if (compact) 14.dp else 20.dp, vertical = 8.dp),
@@ -122,7 +128,7 @@ fun GlossyButton(
     }
 }
 
-/** Raised glass-like card with a top highlight and layered shadow. */
+/** Card on a soft shadow with a hairline border. */
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
@@ -135,39 +141,39 @@ fun GlassCard(
     val scheme = MaterialTheme.colorScheme
     val bg = when {
         style.eink -> Brush.verticalGradient(listOf(Color.White, Color.White))
-        style.dark -> Brush.verticalGradient(listOf(Color(0xFF242A33), Color(0xFF1C2028)))
-        else -> Brush.verticalGradient(listOf(Color.White, Color(0xFFF7F3EC)))
+        style.dark -> Brush.verticalGradient(listOf(KarColors.DarkSurface, KarColors.DarkSurface))
+        else -> Brush.verticalGradient(listOf(Color.White, Color.White))
     }
     Column(
         modifier = modifier
-            .then(if (style.glossy) Modifier.shadow(10.dp, shape, ambientColor = Color(0x331E190F), spotColor = Color(0x441E190F)) else Modifier)
+            .then(if (style.glossy && !style.dark) Modifier.shadow(6.dp, shape, ambientColor = Color(0x1A1A3A7A), spotColor = Color(0x261A3A7A)) else Modifier)
             .clip(shape)
             .background(bg)
-            .border(if (style.eink) BorderStroke(2.dp, Color.Black) else BorderStroke(1.dp, if (style.dark) scheme.outlineVariant else Color.White), shape)
+            .border(if (style.eink) BorderStroke(2.dp, Color.Black) else BorderStroke(1.dp, scheme.outlineVariant), shape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         content = content,
     )
 }
 
-/** Dark navy hero panel with a soft sheen, used for "continue reading" and status banners. */
+/** Blue hero panel, used for "continue reading" and status banners. */
 @Composable
-fun HeroPanel(modifier: Modifier = Modifier, colors: List<Color> = listOf(Color(0xFF1F3E66), Color(0xFF142A47), Color(0xFF0E1E35)), content: @Composable RowScope.() -> Unit) {
+fun HeroPanel(modifier: Modifier = Modifier, colors: List<Color> = listOf(Color(0xFF2E6BFF), KarColors.Primary, KarColors.PrimaryDeep), content: @Composable RowScope.() -> Unit) {
     val style = LocalKarStyle.current
     val shape = RoundedCornerShape(24.dp)
     Row(
         modifier = modifier
-            .then(if (style.glossy) Modifier.shadow(14.dp, shape) else Modifier)
+            .then(if (style.glossy) Modifier.shadow(10.dp, shape, ambientColor = KarColors.Primary.copy(alpha = 0.35f), spotColor = KarColors.Primary.copy(alpha = 0.4f)) else Modifier)
             .clip(shape)
             .background(if (style.eink) Brush.verticalGradient(listOf(Color.White, Color.White)) else Brush.linearGradient(colors))
-            .then(if (style.glossy) Modifier.background(Brush.verticalGradient(0f to Color.White.copy(alpha = 0.12f), 0.5f to Color.Transparent)) else Modifier.border(2.dp, Color.Black, shape))
+            .then(if (style.glossy) Modifier.background(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.14f), Color.Transparent), center = Offset(900f, -200f), radius = 900f)) else Modifier.border(2.dp, Color.Black, shape))
             .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content,
     )
 }
 
-/** Gradient app bar matching the design (navy with top highlight). Flat white in e-ink mode. */
+/** Clean top bar on the page surface with a hairline divider; title in ink, actions in blue. Flat in e-ink mode. */
 @Composable
 fun KarTopBar(
     title: String,
@@ -177,30 +183,29 @@ fun KarTopBar(
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val style = LocalKarStyle.current
-    val fg = if (style.eink) Color.Black else Color.White
+    val scheme = MaterialTheme.colorScheme
+    val fg = if (style.eink) Color.Black else scheme.onSurface
+    val actionTint = if (style.eink) Color.Black else scheme.primary
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (style.eink) Modifier.background(Color.White).border(BorderStroke(0.dp, Color.Transparent))
-                else Modifier.background(Brush.verticalGradient(listOf(Color(0xFF2C5384), Color(0xFF1B3557), Color(0xFF142A47)))),
-            )
+            .background(if (style.eink) Color.White else scheme.surface)
             .padding(horizontal = 8.dp, vertical = 8.dp)
             .defaultMinSize(minHeight = 56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (onBack != null && backIcon != null) {
-            IconButton(onClick = onBack) { Icon(backIcon, contentDescription = "Back", tint = fg) }
+            IconButton(onClick = onBack) { Icon(backIcon, contentDescription = "Back", tint = actionTint) }
         } else {
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f).padding(horizontal = 4.dp)) {
-            Text(title, color = fg, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (subtitle != null) Text(subtitle, color = fg.copy(alpha = 0.75f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, color = fg, fontWeight = FontWeight.Bold, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (subtitle != null) Text(subtitle, color = if (style.eink) Color.Black else scheme.onSurfaceVariant, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        CompositionTint(fg) { actions() }
+        CompositionTint(actionTint) { actions() }
     }
-    if (style.eink) Box(Modifier.fillMaxWidth().height(2.dp).background(Color.Black))
+    Box(Modifier.fillMaxWidth().height(if (style.eink) 2.dp else 1.dp).background(if (style.eink) Color.Black else scheme.outlineVariant))
 }
 
 @Composable
@@ -208,7 +213,7 @@ private fun RowScope.CompositionTint(color: Color, content: @Composable RowScope
     androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides color) { content() }
 }
 
-/** Recessed track with a glossy, glowing fill. */
+/** Rounded track with a blue fill. */
 @Composable
 fun GlossyProgress(progress: Float, modifier: Modifier = Modifier, height: Dp = 8.dp, onDark: Boolean = false, color: Color? = null) {
     val style = LocalKarStyle.current
@@ -221,9 +226,9 @@ fun GlossyProgress(progress: Float, modifier: Modifier = Modifier, height: Dp = 
             .background(
                 when {
                     style.eink -> Color.White
-                    onDark -> Color(0x59000000)
-                    style.dark -> Color(0xFF0E1116)
-                    else -> Color(0xFFDDD5C6)
+                    onDark -> Color.White.copy(alpha = 0.25f)
+                    style.dark -> KarColors.DarkBorder
+                    else -> Color(0xFFE3E9F3)
                 },
             )
             .then(if (style.eink) Modifier.border(1.dp, Color.Black, trackShape) else Modifier)
@@ -239,8 +244,8 @@ fun GlossyProgress(progress: Float, modifier: Modifier = Modifier, height: Dp = 
                         when {
                             style.eink -> Brush.verticalGradient(listOf(Color.Black, Color.Black))
                             color != null -> Brush.verticalGradient(listOf(color.copy(alpha = 0.75f), color))
-                            onDark -> Brush.verticalGradient(listOf(Color(0xFFFCE19A), KarColors.Gold, Color(0xFFB97A1C)))
-                            else -> Brush.verticalGradient(listOf(Color(0xFF5A8AC8), KarColors.Navy))
+                            onDark -> Brush.horizontalGradient(listOf(Color.White, KarColors.AccentLight))
+                            else -> Brush.horizontalGradient(listOf(KarColors.Accent, KarColors.Primary))
                         },
                     ),
             )
@@ -250,7 +255,7 @@ fun GlossyProgress(progress: Float, modifier: Modifier = Modifier, height: Dp = 
 
 /** Ring used for daily goals and focus timers. */
 @Composable
-fun ProgressRing(progress: Float, modifier: Modifier = Modifier, stroke: Dp = 12.dp, trackColor: Color = Color(0x33000000), color: Color = KarColors.Gold) {
+fun ProgressRing(progress: Float, modifier: Modifier = Modifier, stroke: Dp = 12.dp, trackColor: Color = Color(0x1F1A5CFF), color: Color = KarColors.Primary) {
     val style = LocalKarStyle.current
     val strokePx = with(LocalDensity.current) { stroke.toPx() }
     Canvas(modifier) {
@@ -263,9 +268,9 @@ fun ProgressRing(progress: Float, modifier: Modifier = Modifier, stroke: Dp = 12
 
 /** Gradient pairs for generated covers, picked by title so each book keeps its colour. */
 private val CoverPalettes = listOf(
-    Color(0xFFA2513F) to Color(0xFF5E2A1F), Color(0xFF2F5688) to Color(0xFF12253F), Color(0xFF56704F) to Color(0xFF27362A),
-    Color(0xFFC08A2E) to Color(0xFF6E4710), Color(0xFF6A4C8C) to Color(0xFF2E1F42), Color(0xFF3E628E) to Color(0xFF1E3A5C),
-    Color(0xFF8C3B55) to Color(0xFF451B2A),
+    Color(0xFF2E6BFF) to Color(0xFF0B3FCC), Color(0xFF00A3FF) to Color(0xFF0060B8), Color(0xFF3B4C7A) to Color(0xFF1B2440),
+    Color(0xFF5B5BD6) to Color(0xFF2E2E8F), Color(0xFF0E9F9A) to Color(0xFF075E5B), Color(0xFF64748B) to Color(0xFF2B3444),
+    Color(0xFF7C5CFF) to Color(0xFF3E2A99),
 )
 
 /**
@@ -367,10 +372,10 @@ fun RatingBar(rating: Int, onRate: ((Int) -> Unit)?, modifier: Modifier = Modifi
             val icon = if (filled) Icons.Filled.Star else Icons.Outlined.StarOutline
             if (onRate != null) {
                 IconButton(onClick = { onRate(if (rating == i) 0 else i) }) {
-                    Icon(icon, contentDescription = "$i stars", tint = if (filled) KarColors.Gold else MaterialTheme.colorScheme.outline)
+                    Icon(icon, contentDescription = "$i stars", tint = if (filled) KarColors.Warning else MaterialTheme.colorScheme.outline)
                 }
             } else {
-                Icon(icon, contentDescription = null, tint = if (filled) KarColors.Gold else MaterialTheme.colorScheme.outline, modifier = Modifier.size(16.dp))
+                Icon(icon, contentDescription = null, tint = if (filled) KarColors.Warning else MaterialTheme.colorScheme.outline, modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -385,7 +390,7 @@ fun GlossyOrb(color: Color, modifier: Modifier = Modifier, selected: Boolean = f
             .then(if (style.glossy) Modifier.shadow(4.dp, CircleShape) else Modifier)
             .clip(CircleShape)
             .background(if (style.eink) Brush.radialGradient(listOf(Color.White, Color.White)) else Brush.radialGradient(listOf(color.copy(alpha = 0.55f).compositeOver(Color.White), color, color.copy(red = color.red * 0.6f, green = color.green * 0.6f, blue = color.blue * 0.6f))))
-            .border(if (selected) 3.dp else if (style.eink) 1.dp else 0.dp, if (selected) KarColors.Gold else Color.Black, CircleShape),
+            .border(if (selected) 3.dp else if (style.eink) 1.dp else 0.dp, if (selected) KarColors.Primary else Color.Black, CircleShape),
         contentAlignment = Alignment.Center,
         content = content,
     )

@@ -42,8 +42,8 @@ import com.kar.reader.ui.common.SwitchRow
 
 /** Speaker colours. They differ in lightness as well as hue, and each is labelled with a name, never colour alone. */
 val SpeakerColors = listOf(
-    Color(0xFF1F4E8C), Color(0xFFA85612), Color(0xFF17665B), Color(0xFF7A3E9D),
-    Color(0xFFB0303F), Color(0xFF4F6B12), Color(0xFF8A5A12), Color(0xFF2F6F9E),
+    Color(0xFF1A5CFF), Color(0xFFC2410C), Color(0xFF0E7C6B), Color(0xFF7C3AED),
+    Color(0xFFBE123C), Color(0xFF4D7C0F), Color(0xFF0369A1), Color(0xFF92400E),
 )
 
 @Composable
@@ -159,11 +159,11 @@ fun TitleField(title: String, onTitle: (String) -> Unit, placeholder: String) {
 @Composable
 fun StatusChip(status: String) {
     val (bg, fg) = when (status) {
-        TranscriptStatus.DONE -> Color(0xFFD5EBDB) to Color(0xFF17532B)
-        TranscriptStatus.FAILED -> Color(0xFFFBE1DB) to Color(0xFF8E2412)
-        TranscriptStatus.RECORDING -> Color(0xFFFFDAD1) to Color(0xFF7A1606)
-        in TranscriptStatus.working -> Color(0xFFDCE5F0) to Color(0xFF16304F)
-        else -> Color(0xFFEDE6D8) to Color(0xFF4F4636)
+        TranscriptStatus.DONE -> Color(0xFFDDF6E8) to Color(0xFF0B6B35)
+        TranscriptStatus.FAILED -> Color(0xFFFFE4E5) to Color(0xFFA51D23)
+        TranscriptStatus.RECORDING -> Color(0xFFFFE4E5) to Color(0xFFA51D23)
+        in TranscriptStatus.working -> Color(0xFFE8EFFF) to Color(0xFF0B3FCC)
+        else -> Color(0xFFEEF2F9) to Color(0xFF3B4A63)
     }
     val eink = LocalKarStyle.current.eink
     Row(

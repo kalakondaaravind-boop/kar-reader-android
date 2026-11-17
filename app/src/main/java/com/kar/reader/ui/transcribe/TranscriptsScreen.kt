@@ -177,7 +177,7 @@ fun TranscriptsScreen(
             recording?.let { r ->
                 item {
                     GlassCard(Modifier.fillMaxWidth(), onClick = onOpenRecording) {
-                        Text("Recording in progress", fontWeight = FontWeight.SemiBold, color = KarColors.Red)
+                        Text("Recording in progress", fontWeight = FontWeight.SemiBold, color = KarColors.Danger)
                         Text("${r.title} · ${TranscriptText.clock(r.elapsedMs)}${if (r.paused) " · paused" else ""}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                         GlossyButton("Open recorder", onClick = onOpenRecording, icon = Icons.Filled.Mic, compact = true)
@@ -188,11 +188,11 @@ fun TranscriptsScreen(
                 Text("Turn a lecture, interview or meeting into text, with each person's words labelled.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    GlossyButton("Record now", onClick = ::startRecording, kind = GlossyKind.GOLD, icon = Icons.Filled.Mic, modifier = Modifier.weight(1f))
+                    GlossyButton("Record now", onClick = ::startRecording, kind = GlossyKind.ACCENT, icon = Icons.Filled.Mic, modifier = Modifier.weight(1f))
                     GlossyButton(
                         "Import audio",
                         onClick = { picker.launch(arrayOf("audio/*", "video/mp4", "application/ogg")) },
-                        kind = GlossyKind.PEARL, icon = Icons.Filled.UploadFile, modifier = Modifier.weight(1f),
+                        kind = GlossyKind.SECONDARY, icon = Icons.Filled.UploadFile, modifier = Modifier.weight(1f),
                     )
                 }
                 Text("MP3, M4A, WAV, OGG, FLAC, AMR and the audio of MP4 videos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
@@ -214,7 +214,7 @@ fun TranscriptsScreen(
             }
             item {
                 Row(verticalAlignment = Alignment.Top) {
-                    Icon(Icons.Filled.Lock, contentDescription = null, tint = KarColors.Green, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Lock, contentDescription = null, tint = KarColors.Success, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         "Everything runs on this device. Audio and text never leave your phone, and deleted transcripts wait 30 days in the recycle bin.",

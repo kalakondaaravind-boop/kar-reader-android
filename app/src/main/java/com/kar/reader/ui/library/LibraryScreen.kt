@@ -264,7 +264,7 @@ private fun BookGridItem(item: LibraryItem, onOpen: () -> Unit, menu: @Composabl
         Box {
             BookCover3D(item.book.displayTitle, item.book.format, item.coverFile, Modifier.fillMaxWidth())
             Row(Modifier.align(Alignment.TopEnd)) {
-                if (item.isPrivate) Icon(Icons.Filled.Lock, "Private", tint = KarColors.Gold, modifier = Modifier.padding(6.dp).size(18.dp))
+                if (item.isPrivate) Icon(Icons.Filled.Lock, "Private", tint = KarColors.Accent, modifier = Modifier.padding(6.dp).size(18.dp))
                 if (item.fileMissing) Icon(Icons.Filled.Warning, "File missing", tint = MaterialTheme.colorScheme.error, modifier = Modifier.padding(6.dp).size(18.dp))
             }
         }
@@ -295,8 +295,8 @@ private fun BookListItem(item: LibraryItem, onOpen: () -> Unit, menu: @Composabl
                 if (item.tags.isNotEmpty()) Text(item.tags.joinToString(" · "), fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary, maxLines = 1)
                 GlossyProgress(item.progressPercent / 100f, Modifier.fillMaxWidth().padding(top = 6.dp), height = 5.dp)
             }
-            if (item.favorite) Icon(Icons.Filled.Favorite, "Favorite", tint = KarColors.Gold, modifier = Modifier.padding(start = 8.dp).size(18.dp))
-            if (item.isPrivate) Icon(Icons.Filled.Lock, "Private", tint = KarColors.Gold, modifier = Modifier.padding(start = 8.dp).size(18.dp))
+            if (item.favorite) Icon(Icons.Filled.Favorite, "Favorite", tint = KarColors.Accent, modifier = Modifier.padding(start = 8.dp).size(18.dp))
+            if (item.isPrivate) Icon(Icons.Filled.Lock, "Private", tint = KarColors.Accent, modifier = Modifier.padding(start = 8.dp).size(18.dp))
             menu()
         }
     }

@@ -299,21 +299,21 @@ private fun LockScreen(onUnlock: ((String) -> Unit) -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) { onUnlock { error = it } }
     Box(
-        Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color(0xFF2F5688), Color(0xFF142A47), Color(0xFF0A1424)))),
+        Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF2E6BFF), KarColors.Primary, KarColors.PrimaryDeep))),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.padding(32.dp)) {
             Box(
-                Modifier.size(104.dp).background(Brush.linearGradient(listOf(KarColors.GoldLight, KarColors.Gold, KarColors.GoldDeep)), androidx.compose.foundation.shape.RoundedCornerShape(32.dp)),
+                Modifier.size(104.dp).background(Brush.linearGradient(listOf(Color.White, Color(0xFFE8EFFF))), androidx.compose.foundation.shape.RoundedCornerShape(32.dp)),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.Lock, contentDescription = null, tint = Color(0xFF2A1A05), modifier = Modifier.size(48.dp)) }
+            ) { Icon(Icons.Filled.Lock, contentDescription = null, tint = KarColors.Primary, modifier = Modifier.size(48.dp)) }
             Spacer(Modifier.height(28.dp))
-            Text("KAR READER is locked", color = Color(0xFFFFF6E4), fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 26.sp)
+            Text("KAR READER is locked", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 26.sp)
             Spacer(Modifier.height(8.dp))
-            Text("Unlock with your fingerprint, face or device PIN.", color = Color(0xFFB8C6DA), textAlign = TextAlign.Center)
-            error?.let { Spacer(Modifier.height(12.dp)); Text(it, color = Color(0xFFFFB4A8), textAlign = TextAlign.Center) }
+            Text("Unlock with your fingerprint, face or device PIN.", color = Color.White.copy(alpha = 0.8f), textAlign = TextAlign.Center)
+            error?.let { Spacer(Modifier.height(12.dp)); Text(it, color = Color(0xFFFFD1D3), textAlign = TextAlign.Center) }
             Spacer(Modifier.height(32.dp))
-            GlossyButton("Unlock", onClick = { error = null; onUnlock { error = it } }, kind = GlossyKind.GOLD, icon = Icons.Filled.Lock)
+            GlossyButton("Unlock", onClick = { error = null; onUnlock { error = it } }, kind = GlossyKind.SECONDARY, icon = Icons.Filled.Lock)
         }
     }
 }

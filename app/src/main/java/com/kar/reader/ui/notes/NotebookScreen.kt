@@ -249,7 +249,7 @@ fun NotebookScreen(onBack: () -> Unit, vm: NotebookViewModel = hiltViewModel()) 
                 TextButton(onClick = { selection = emptySet() }) { Text("Done") }
             }
         }
-        Box(Modifier.fillMaxSize().background(if (LocalKarStyle.current.eink) Color.White else Color(0xFF3A3F48)).verticalScroll(rememberScrollState(), enabled = false), contentAlignment = Alignment.TopCenter) {
+        Box(Modifier.fillMaxSize().background(if (LocalKarStyle.current.eink) Color.White else Color(0xFF2A3142)).verticalScroll(rememberScrollState(), enabled = false), contentAlignment = Alignment.TopCenter) {
             Box(Modifier.padding(16.dp).widthIn(max = 900.dp).fillMaxWidth()) {
                 NotebookCanvas(
                     template = page?.template ?: "BLANK",
@@ -342,7 +342,7 @@ private fun NotebookCanvas(
         if (selection.isNotEmpty()) {
             bounds(strokes.filter { it.id in selection }.flatMap { InkCodec.decode(it.points) })?.let { b ->
                 drawRect(
-                    Color(0xFFE0A33A), Offset(b[0] * w + drag.x - 6, b[1] * w + drag.y - 6), Size((b[2] - b[0]) * w + 12, (b[3] - b[1]) * w + 12),
+                    Color(0xFF1A5CFF), Offset(b[0] * w + drag.x - 6, b[1] * w + drag.y - 6), Size((b[2] - b[0]) * w + 12, (b[3] - b[1]) * w + 12),
                     style = Stroke(2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f))),
                 )
             }
@@ -350,7 +350,7 @@ private fun NotebookCanvas(
         if (live.size > 1) {
             val path = Path().apply { moveTo(live[0].x, live[0].y); for (i in 1 until live.size) lineTo(live[i].x, live[i].y) }
             if (tool == NotebookTool.LASSO) {
-                drawPath(path, Color(0xFFE0A33A), style = Stroke(2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f))))
+                drawPath(path, Color(0xFF1A5CFF), style = Stroke(2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f))))
             } else {
                 val hl = tool == NotebookTool.HIGHLIGHTER
                 drawPath(path, if (hl) Color(0x6EF2C744) else Color(color), style = Stroke((if (hl) 0.0175f else 0.0035f) * w, cap = StrokeCap.Round, join = StrokeJoin.Round))

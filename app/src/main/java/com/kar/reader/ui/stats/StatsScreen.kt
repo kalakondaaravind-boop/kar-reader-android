@@ -181,13 +181,13 @@ fun StatsScreen(onStartFocus: () -> Unit, vm: StatsViewModel = hiltViewModel()) 
                 Text("Last 7 days", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(12.dp))
                 val max = (state.week.maxOfOrNull { it.second } ?: 0).coerceAtLeast(state.goal).coerceAtLeast(1)
-                val barColors = if (glossy) listOf(Color(0xFF5A8AC8), KarColors.Navy) else listOf(Color.Black, Color.Black)
+                val barColors = if (glossy) listOf(KarColors.Accent, KarColors.Primary) else listOf(Color.Black, Color.Black)
                 Row(Modifier.fillMaxWidth().height(130.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
                     state.week.forEach { (day, minutes) ->
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                             Canvas(Modifier.width(22.dp).height(100.dp)) {
                                 val h = size.height * minutes / max
-                                drawRoundRect(Color(0x22000000), Offset.Zero, size, CornerRadius(8f))
+                                drawRoundRect(Color(0x1A1A5CFF), Offset.Zero, size, CornerRadius(8f))
                                 drawRoundRect(Brush.verticalGradient(barColors), Offset(0f, size.height - h), Size(size.width, h), CornerRadius(8f))
                             }
                             Text(day, fontSize = 11.sp)
@@ -203,7 +203,7 @@ fun StatsScreen(onStartFocus: () -> Unit, vm: StatsViewModel = hiltViewModel()) 
                     Text("Focus session", fontWeight = FontWeight.SemiBold)
                     Text("A reading timer that can turn on Do Not Disturb and adds the time to your statistics.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 }
-                GlossyButton("Start", onClick = onStartFocus, kind = GlossyKind.GOLD, icon = Icons.Filled.Timer)
+                GlossyButton("Start", onClick = onStartFocus, kind = GlossyKind.ACCENT, icon = Icons.Filled.Timer)
             }
         }
 
@@ -233,10 +233,10 @@ fun StatsScreen(onStartFocus: () -> Unit, vm: StatsViewModel = hiltViewModel()) 
 private fun YearRecapCard(recap: YearRecap, onShare: () -> Unit) {
     val glossy = LocalKarStyle.current.glossy
     val tiles = listOf(
-        Triple(recap.booksFinished.toString(), "books finished", listOf(Color(0xFFFCE19A), Color(0xFFA86C15))),
-        Triple("%.0f".format(recap.hoursRead), "hours read", listOf(Color(0xFF9CC2F2), Color(0xFF142A47))),
-        Triple(recap.bestStreakDays.toString(), "day best streak", listOf(Color(0xFFA9DDB4), Color(0xFF1E5A33))),
-        Triple(recap.highlightsMade.toString(), "highlights made", listOf(Color(0xFFE3B6F0), Color(0xFF3E1F52))),
+        Triple(recap.booksFinished.toString(), "books finished", listOf(Color(0xFF5B8CFF), Color(0xFF0B3FCC))),
+        Triple("%.0f".format(recap.hoursRead), "hours read", listOf(Color(0xFF33B8FF), Color(0xFF0060B8))),
+        Triple(recap.bestStreakDays.toString(), "day best streak", listOf(Color(0xFF34C77B), Color(0xFF0B6E3A))),
+        Triple(recap.highlightsMade.toString(), "highlights made", listOf(Color(0xFF8B7BFF), Color(0xFF3E2A99))),
     )
     GlassCard(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -244,7 +244,7 @@ private fun YearRecapCard(recap: YearRecap, onShare: () -> Unit) {
                 SectionLabel("Your year in reading")
                 Text("${recap.year}, so far", style = MaterialTheme.typography.headlineSmall)
             }
-            GlossyButton("Share", onClick = onShare, kind = GlossyKind.PEARL, icon = Icons.Filled.Share, compact = true)
+            GlossyButton("Share", onClick = onShare, kind = GlossyKind.SECONDARY, icon = Icons.Filled.Share, compact = true)
         }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -257,7 +257,7 @@ private fun YearRecapCard(recap: YearRecap, onShare: () -> Unit) {
                         .padding(14.dp),
                 ) {
                     val dark = i == 0 || i == 2
-                    val fg = if (!glossy) Color.Black else if (dark) Color(0xFF1A1206) else Color.White
+                    val fg = if (!glossy) Color.Black else Color.White
                     Text(value, color = fg, fontWeight = FontWeight.Bold, fontSize = 28.sp)
                     Text(label, color = fg.copy(alpha = 0.85f), fontSize = 12.sp)
                 }

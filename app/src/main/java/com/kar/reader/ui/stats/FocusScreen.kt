@@ -174,12 +174,12 @@ fun FocusScreen(onBack: () -> Unit, vm: FocusViewModel = hiltViewModel()) {
                         TextButton(onClick = { context.startActivity(vm.dndSettingsIntent()) }) { Text("Open system settings") }
                     }
                 }
-                GlossyButton("Start focus session", onClick = vm::start, kind = GlossyKind.GOLD, modifier = Modifier.widthIn(min = 260.dp))
+                GlossyButton("Start focus session", onClick = vm::start, kind = GlossyKind.ACCENT, modifier = Modifier.widthIn(min = 260.dp))
                 state.savedMessage?.let { Text(it, color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center) }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    GlossyButton(if (state.paused) "Resume" else "Pause", onClick = vm::togglePause, kind = GlossyKind.PEARL)
-                    GlossyButton("End and save", onClick = { vm.finish() }, kind = GlossyKind.GOLD)
+                    GlossyButton(if (state.paused) "Resume" else "Pause", onClick = vm::togglePause, kind = GlossyKind.SECONDARY)
+                    GlossyButton("End and save", onClick = { vm.finish() }, kind = GlossyKind.ACCENT)
                 }
                 Text("Open a book from the library in split screen, or just read on paper. The timer keeps counting while this screen is open.", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.widthIn(max = 520.dp))
             }

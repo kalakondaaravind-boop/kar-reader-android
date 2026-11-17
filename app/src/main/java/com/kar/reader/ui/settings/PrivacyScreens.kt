@@ -136,19 +136,19 @@ fun PrivacyScreen(activity: FragmentActivity, onBack: () -> Unit, onNavigate: (S
             val r = report
             if (r != null) {
                 val offline = !r.hasNetworkPermission
-                HeroPanel(Modifier.fillMaxWidth(), colors = if (offline) listOf(Color(0xFF1F4A3A), Color(0xFF14352A), Color(0xFF0C241C)) else listOf(Color(0xFF5A3E0C), Color(0xFF3B2705), Color(0xFF241703))) {
-                    Icon(if (offline) Icons.Filled.Shield else Icons.Filled.Warning, null, tint = if (glossy) Color(0xFF9BE3B0) else Color.Black, modifier = Modifier.size(56.dp))
+                HeroPanel(Modifier.fillMaxWidth(), colors = if (offline) listOf(Color(0xFF14B86A), Color(0xFF0E8A50), Color(0xFF075E37)) else listOf(Color(0xFFF5A524), Color(0xFFD9870C), Color(0xFFA3620A))) {
+                    Icon(if (offline) Icons.Filled.Shield else Icons.Filled.Warning, null, tint = if (glossy) Color.White else Color.Black, modifier = Modifier.size(56.dp))
                     Spacer(Modifier.width(18.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(if (offline) "VERIFIED FROM THIS APP'S PERMISSIONS" else "SYNC BUILD", style = MaterialTheme.typography.labelSmall, color = if (glossy) Color(0xFF9BE3B0) else Color.Black)
+                        Text(if (offline) "VERIFIED FROM THIS APP'S PERMISSIONS" else "SYNC BUILD", style = MaterialTheme.typography.labelSmall, color = if (glossy) Color.White.copy(alpha = 0.85f) else Color.Black)
                         Text(
                             if (offline) "This app has no internet access" else "Network access is used only for Wi-Fi sync",
-                            fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = if (glossy) Color.White else Color.Black,
+                            fontWeight = FontWeight.Bold, fontSize = 24.sp, color = if (glossy) Color.White else Color.Black,
                         )
                         Text(
                             if (offline) "KAR READER doesn't request network permission, so Android blocks every connection it could make. Nothing you read or write leaves this device unless you export or share it yourself."
                             else "This is the KAR READER Sync build. It can connect to your own devices on the local network when you start a Wi-Fi sync. It has no accounts, ads, tracking or uploads.",
-                            color = if (glossy) Color(0xFFB9D6C4) else Color.Black, fontSize = 14.sp,
+                            color = if (glossy) Color.White.copy(alpha = 0.9f) else Color.Black, fontSize = 14.sp,
                         )
                     }
                 }

@@ -77,8 +77,8 @@ fun RecordingScreen(onClose: () -> Unit, onStopped: (String) -> Unit, vm: Record
     val scope = rememberCoroutineScope()
     var stopping by remember { mutableStateOf(false) }
     val eink = LocalKarStyle.current.eink
-    val fg = if (eink) Color.Black else Color(0xFFFFF6E4)
-    val dim = if (eink) Color.Black else Color(0xFFB8C6DA)
+    val fg = if (eink) Color.Black else Color.White
+    val dim = if (eink) Color.Black else Color(0xFFB4C8EC)
 
     // Recording ended elsewhere (from the bin, or it failed): leave.
     LaunchedEffect(r == null) { if (r == null && !stopping) onClose() }
@@ -87,7 +87,7 @@ fun RecordingScreen(onClose: () -> Unit, onStopped: (String) -> Unit, vm: Record
     Box(
         Modifier.fillMaxSize().background(
             if (eink) Brush.verticalGradient(listOf(Color.White, Color.White))
-            else Brush.radialGradient(listOf(Color(0xFF233A5E), Color(0xFF121C2E), Color(0xFF080C14))),
+            else Brush.linearGradient(listOf(Color(0xFF173A99), Color(0xFF0E1E52), Color(0xFF0B1220))),
         ),
     ) {
         Column(
@@ -98,8 +98,8 @@ fun RecordingScreen(onClose: () -> Unit, onStopped: (String) -> Unit, vm: Record
                 Text(state.title, color = fg, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.weight(1f), maxLines = 1)
                 val badge = if (state.paused) "PAUSED" else "REC"
                 Text(
-                    badge, color = if (eink) Color.Black else Color(0xFF3A0B05), fontWeight = FontWeight.Bold, fontSize = 12.sp,
-                    modifier = Modifier.background(if (eink) Color.White else if (state.paused) Color(0xFFE8E1D4) else Color(0xFFFFB4A3), RoundedCornerShape(12.dp))
+                    badge, color = if (eink) Color.Black else Color(0xFF6E0A0E), fontWeight = FontWeight.Bold, fontSize = 12.sp,
+                    modifier = Modifier.background(if (eink) Color.White else if (state.paused) Color(0xFFDCE3EE) else Color(0xFFFFC9CB), RoundedCornerShape(12.dp))
                         .then(if (eink) Modifier.border(2.dp, Color.Black, RoundedCornerShape(12.dp)) else Modifier)
                         .padding(horizontal = 10.dp, vertical = 5.dp),
                 )
@@ -115,7 +115,7 @@ fun RecordingScreen(onClose: () -> Unit, onStopped: (String) -> Unit, vm: Record
                     Text("MARKED MOMENTS", color = dim, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     state.marks.takeLast(4).forEach { m ->
                         Row(Modifier.fillMaxWidth().background(Color.White.copy(alpha = if (eink) 0f else 0.07f), RoundedCornerShape(12.dp)).padding(12.dp)) {
-                            Text(TranscriptText.clock(m.atMs), color = if (eink) Color.Black else Color(0xFFF4C268), fontFamily = FontFamily.Monospace, fontSize = 13.sp)
+                            Text(TranscriptText.clock(m.atMs), color = if (eink) Color.Black else Color(0xFF7FD1FF), fontFamily = FontFamily.Monospace, fontSize = 13.sp)
                             Spacer(Modifier.size(12.dp))
                             Text(m.label, color = fg, fontSize = 14.sp)
                         }
@@ -129,7 +129,7 @@ fun RecordingScreen(onClose: () -> Unit, onStopped: (String) -> Unit, vm: Record
             )
             Spacer(Modifier.height(32.dp))
             Row(Modifier.fillMaxWidth().widthIn(max = 520.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                GlossyButton(if (state.paused) "Resume" else "Pause", onClick = { vm.pause(!state.paused) }, kind = GlossyKind.PEARL, icon = if (state.paused) Icons.Filled.Mic else Icons.Filled.Pause)
+                GlossyButton(if (state.paused) "Resume" else "Pause", onClick = { vm.pause(!state.paused) }, kind = GlossyKind.SECONDARY, icon = if (state.paused) Icons.Filled.Mic else Icons.Filled.Pause)
                 FilledIconButton(
                     onClick = {
                         if (!stopping) {
@@ -139,9 +139,9 @@ fun RecordingScreen(onClose: () -> Unit, onStopped: (String) -> Unit, vm: Record
                     },
                     modifier = Modifier.size(88.dp).semantics { contentDescription = "Stop and transcribe" },
                     shape = CircleShape,
-                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = if (eink) Color.Black else Color(0xFFD9573A), contentColor = Color.White),
+                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = if (eink) Color.Black else Color(0xFFE5484D), contentColor = Color.White),
                 ) { Icon(Icons.Filled.Stop, contentDescription = null, modifier = Modifier.size(40.dp)) }
-                GlossyButton("Mark", onClick = { scope.launch { vm.mark() } }, kind = GlossyKind.GOLD, icon = Icons.Filled.Flag, enabled = !state.paused)
+                GlossyButton("Mark", onClick = { scope.launch { vm.mark() } }, kind = GlossyKind.ACCENT, icon = Icons.Filled.Flag, enabled = !state.paused)
             }
             Spacer(Modifier.height(10.dp))
             Text(if (stopping) "Saving…" else "Stop to transcribe", color = dim, fontSize = 12.sp)
@@ -168,7 +168,7 @@ private fun LevelBars(levels: List<Float>, eink: Boolean, modifier: Modifier) {
         bars.forEach { v ->
             Box(
                 Modifier.weight(1f).fillMaxHeight((0.06f + v * 0.94f).coerceIn(0.06f, 1f))
-                    .background(if (eink) Brush.verticalGradient(listOf(Color.Black, Color.Black)) else Brush.verticalGradient(listOf(Color(0xFFFCDC8E), Color(0xFFD6922A))), RoundedCornerShape(3.dp)),
+                    .background(if (eink) Brush.verticalGradient(listOf(Color.Black, Color.Black)) else Brush.verticalGradient(listOf(Color(0xFF7FD1FF), Color(0xFF1A5CFF))), RoundedCornerShape(3.dp)),
             )
         }
     }

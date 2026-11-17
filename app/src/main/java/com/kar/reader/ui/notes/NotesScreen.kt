@@ -228,7 +228,7 @@ fun NotesScreen(
                 SectionLabel("KAR READER")
                 Text("Highlights & notes", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
             }
-            GlossyButton("Export", onClick = onExport, kind = GlossyKind.PEARL, icon = Icons.Filled.Upload, compact = true)
+            GlossyButton("Export", onClick = onExport, kind = GlossyKind.SECONDARY, icon = Icons.Filled.Upload, compact = true)
         }
         TabRow(selectedTabIndex = tab, modifier = Modifier.padding(top = 8.dp)) {
             Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Highlights") })

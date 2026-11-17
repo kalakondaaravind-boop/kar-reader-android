@@ -463,7 +463,7 @@ private fun PlayerBar(
 @Composable
 private fun SpeakerTimeline(segments: List<TranscriptSegmentEntity>, marks: List<TranscriptMarkEntity>, duration: Long, modifier: Modifier) {
     val colors = segments.map { speakerColor(it.speaker) }
-    val markColor = if (LocalKarStyle.current.eink) Color.Black else KarColors.Gold
+    val markColor = if (LocalKarStyle.current.eink) Color.Black else KarColors.Accent
     androidx.compose.foundation.Canvas(modifier) {
         drawRoundRect(Color.Gray.copy(alpha = 0.2f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f))
         segments.forEachIndexed { i, s ->
@@ -500,7 +500,7 @@ private fun SpeakersPanel(ids: List<Int>, name: (Int) -> String, share: Map<Int,
             }
         }
         Row(verticalAlignment = Alignment.Top) {
-            Icon(Icons.Filled.Lock, contentDescription = null, tint = KarColors.Green, modifier = Modifier.size(16.dp))
+            Icon(Icons.Filled.Lock, contentDescription = null, tint = KarColors.Success, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
             Text("Voices are compared on this device only. Nothing about them is stored except these labels.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -556,7 +556,7 @@ private fun ProcessingPanel(t: TranscriptEntity, live: ProcessingState?, onCance
                         when (state) { 2 -> "✓"; 1 -> "${i + 1}"; else -> "${i + 1}" },
                         color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp,
                         modifier = Modifier.size(28.dp).background(
-                            when (state) { 2 -> KarColors.Green; 1 -> KarColors.Navy; else -> Color(0xFFA39A8A) }, RoundedCornerShape(14.dp),
+                            when (state) { 2 -> KarColors.Success; 1 -> KarColors.Primary; else -> Color(0xFFB4C0D3) }, RoundedCornerShape(14.dp),
                         ).padding(top = 5.dp),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
@@ -587,7 +587,7 @@ private fun NotReadyPanel(t: TranscriptEntity, onTranscribe: () -> Unit) {
                 Spacer(Modifier.height(6.dp))
                 Text("Recording saved · ${TranscriptText.clock(t.durationMs)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                GlossyButton("Transcribe…", onClick = onTranscribe, kind = GlossyKind.GOLD, icon = Icons.Filled.Refresh)
+                GlossyButton("Transcribe…", onClick = onTranscribe, kind = GlossyKind.ACCENT, icon = Icons.Filled.Refresh)
             }
         }
     }

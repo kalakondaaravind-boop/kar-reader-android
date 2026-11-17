@@ -145,40 +145,40 @@ fun ReviewScreen(vm: ReviewViewModel = hiltViewModel()) {
                                 .graphicsLayer { if (glossy) { rotationX = 3f; cameraDistance = 16f * density } }
                                 .then(if (glossy) Modifier.shadow(18.dp, shape) else Modifier)
                                 .clip(shape)
-                                .background(if (glossy) Brush.verticalGradient(listOf(Color(0xFFFFFDF7), Color(0xFFF4ECD8))) else Brush.verticalGradient(listOf(Color.White, Color.White)))
+                                .background(if (glossy) Brush.verticalGradient(listOf(Color.White, Color(0xFFF1F5FD))) else Brush.verticalGradient(listOf(Color.White, Color.White)))
                                 .clickable { revealed = true }
                                 .padding(28.dp),
                         ) {
                             Text(
                                 if (card.sourceType == "VOCABULARY") "WORD · DO YOU REMEMBER IT?" else "FILL IN THE GAP · FROM YOUR HIGHLIGHT",
-                                style = MaterialTheme.typography.labelSmall, color = Color(0xFF8A5A12),
+                                style = MaterialTheme.typography.labelSmall, color = KarColors.Primary,
                             )
                             Spacer(Modifier.height(18.dp))
-                            Text(card.front, fontFamily = FontFamily.Serif, fontSize = 23.sp, lineHeight = 34.sp, color = Color(0xFF2E2418))
+                            Text(card.front, fontFamily = FontFamily.Serif, fontSize = 23.sp, lineHeight = 34.sp, color = KarColors.Ink)
                             Spacer(Modifier.height(20.dp))
                             if (shown) {
-                                Text(card.back, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF8A5A12))
+                                Text(card.back, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = KarColors.PrimaryDeep)
                             } else {
-                                Text("Tap to show the answer", color = Color(0xFF6B5A44), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                                Text("Tap to show the answer", color = KarColors.Muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                             }
                             Spacer(Modifier.weight(1f, fill = false))
                             if (book != null) {
                                 Spacer(Modifier.height(20.dp))
-                                Text("${book.displayTitle}${book.displayAuthor?.let { " · $it" } ?: ""}", fontSize = 13.sp, color = Color(0xFF6B5A44))
+                                Text("${book.displayTitle}${book.displayAuthor?.let { " · $it" } ?: ""}", fontSize = 13.sp, color = KarColors.Muted)
                             }
                         }
                     }
                     Spacer(Modifier.height(20.dp))
                     if (!revealed) {
-                        GlossyButton("Show answer", onClick = { revealed = true }, modifier = Modifier.fillMaxWidth(), kind = GlossyKind.GOLD)
+                        GlossyButton("Show answer", onClick = { revealed = true }, modifier = Modifier.fillMaxWidth(), kind = GlossyKind.ACCENT)
                     } else {
                         Text("How well did you remember it?", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            GradeButton("Again", vm.preview(card, ReviewGrade.AGAIN), Color(0xFFA8321F), Modifier.weight(1f)) { vm.grade(card, ReviewGrade.AGAIN); revealed = false }
-                            GradeButton("Hard", vm.preview(card, ReviewGrade.HARD), Color(0xFFA86C15), Modifier.weight(1f)) { vm.grade(card, ReviewGrade.HARD); revealed = false }
-                            GradeButton("Good", vm.preview(card, ReviewGrade.GOOD), Color(0xFF2E6B3A), Modifier.weight(1f)) { vm.grade(card, ReviewGrade.GOOD); revealed = false }
-                            GradeButton("Easy", vm.preview(card, ReviewGrade.EASY), Color(0xFF1F3A5F), Modifier.weight(1f)) { vm.grade(card, ReviewGrade.EASY); revealed = false }
+                            GradeButton("Again", vm.preview(card, ReviewGrade.AGAIN), Color(0xFFD12F35), Modifier.weight(1f)) { vm.grade(card, ReviewGrade.AGAIN); revealed = false }
+                            GradeButton("Hard", vm.preview(card, ReviewGrade.HARD), Color(0xFFB4650A), Modifier.weight(1f)) { vm.grade(card, ReviewGrade.HARD); revealed = false }
+                            GradeButton("Good", vm.preview(card, ReviewGrade.GOOD), Color(0xFF0E8A43), Modifier.weight(1f)) { vm.grade(card, ReviewGrade.GOOD); revealed = false }
+                            GradeButton("Easy", vm.preview(card, ReviewGrade.EASY), KarColors.Primary, Modifier.weight(1f)) { vm.grade(card, ReviewGrade.EASY); revealed = false }
                         }
                     }
                 }

@@ -155,20 +155,20 @@ fun HomeScreen(
                 BookCover3D(current.book.displayTitle, current.book.format, current.coverFile, Modifier.width(76.dp))
                 Spacer(Modifier.width(20.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("CONTINUE READING", style = MaterialTheme.typography.labelSmall, color = if (glossy) Color(0xFFF4C268) else Color.Black)
+                    Text("CONTINUE READING", style = MaterialTheme.typography.labelSmall, color = if (glossy) Color.White.copy(alpha = 0.8f) else Color.Black)
                     Text(
-                        current.book.displayTitle, fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold, fontSize = 22.sp,
+                        current.book.displayTitle, fontWeight = FontWeight.Bold, fontSize = 22.sp,
                         color = if (glossy) Color.White else Color.Black, maxLines = 2, overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         listOfNotNull(current.book.displayAuthor, "${current.progressPercent}%").joinToString(" · "),
-                        color = if (glossy) Color(0xFFB8C6DA) else Color.Black, fontSize = 14.sp,
+                        color = if (glossy) Color.White.copy(alpha = 0.85f) else Color.Black, fontSize = 14.sp,
                     )
                     Spacer(Modifier.height(10.dp))
                     GlossyProgress(current.progressPercent / 100f, Modifier.fillMaxWidth(), onDark = true)
                 }
                 Spacer(Modifier.width(16.dp))
-                GlossyButton("Resume", onClick = { onOpenBook(current.book.id) }, kind = GlossyKind.GOLD, icon = Icons.Filled.PlayArrow)
+                GlossyButton("Resume", onClick = { onOpenBook(current.book.id) }, kind = GlossyKind.SECONDARY, icon = Icons.Filled.PlayArrow)
             }
         } else if (state.loaded) {
             GlassCard(Modifier.fillMaxWidth()) {
@@ -198,7 +198,7 @@ fun HomeScreen(
             }
             GlassCard(Modifier.weight(1f).widthIn(min = 220.dp), onClick = onOpenReview) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.School, contentDescription = null, tint = KarColors.Green, modifier = Modifier.size(40.dp))
+                    Icon(Icons.Filled.School, contentDescription = null, tint = KarColors.Success, modifier = Modifier.size(40.dp))
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text("${state.cardsDue} flashcards due", fontWeight = FontWeight.SemiBold)
@@ -208,7 +208,7 @@ fun HomeScreen(
             }
             GlassCard(Modifier.weight(1f).widthIn(min = 220.dp), onClick = onTranscribe) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Mic, contentDescription = null, tint = KarColors.Red, modifier = Modifier.size(40.dp))
+                    Icon(Icons.Filled.Mic, contentDescription = null, tint = KarColors.Danger, modifier = Modifier.size(40.dp))
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text("Transcribe", fontWeight = FontWeight.SemiBold)

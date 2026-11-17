@@ -256,7 +256,7 @@ fun PdfReaderScreen(onBack: () -> Unit, onQuoteCard: (String) -> Unit, vm: PdfRe
             Text(
                 "Two fingers to scroll and zoom",
                 color = Color.White, fontSize = 12.sp,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp).background(Color(0xCC14181F), androidx.compose.foundation.shape.RoundedCornerShape(16.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp).background(Color(0xE60B1220), androidx.compose.foundation.shape.RoundedCornerShape(16.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp))
@@ -339,7 +339,7 @@ private fun PdfPages(
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
-            .background(if (LocalKarStyle.current.eink) Color.White else Color(0xFF3A3F48))
+            .background(if (LocalKarStyle.current.eink) Color.White else Color(0xFF2A3142))
             .pointerInput(Unit) {
                 // Two fingers: zoom and pan. Caught before children so drawing tools never see them.
                 awaitEachGesture {
@@ -477,8 +477,8 @@ private fun PdfPage(
             }
             val a = areaStart; val b = areaEnd
             if (a != null && b != null) {
-                drawRect(Color(0x55F2C744), Offset(minOf(a.x, b.x), minOf(a.y, b.y)), Size(kotlin.math.abs(b.x - a.x), kotlin.math.abs(b.y - a.y)))
-                drawRect(Color(0xFFE0A33A), Offset(minOf(a.x, b.x), minOf(a.y, b.y)), Size(kotlin.math.abs(b.x - a.x), kotlin.math.abs(b.y - a.y)), style = Stroke(2.dp.toPx()))
+                drawRect(Color(0x3300A3FF), Offset(minOf(a.x, b.x), minOf(a.y, b.y)), Size(kotlin.math.abs(b.x - a.x), kotlin.math.abs(b.y - a.y)))
+                drawRect(Color(0xFF1A5CFF), Offset(minOf(a.x, b.x), minOf(a.y, b.y)), Size(kotlin.math.abs(b.x - a.x), kotlin.math.abs(b.y - a.y)), style = Stroke(2.dp.toPx()))
             }
         }
     }

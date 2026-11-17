@@ -103,7 +103,7 @@ fun CalibreImportScreen(onBack: () -> Unit, vm: CalibreViewModel = hiltViewModel
                 GlassCard(Modifier.fillMaxWidth()) {
                     Text("Choose your “Calibre Library” folder (the one containing metadata.db). It's only read, never changed. Titles, authors, tags, series, ratings and covers come across; EPUB is preferred over PDF when a book has both.", fontSize = 13.sp)
                     Spacer(Modifier.height(10.dp))
-                    GlossyButton(if (lib == null) "Choose folder…" else "Choose another folder…", onClick = { picker.launch(null) }, icon = Icons.Filled.Folder, kind = if (lib == null) GlossyKind.PRIMARY else GlossyKind.PEARL, enabled = busy == null)
+                    GlossyButton(if (lib == null) "Choose folder…" else "Choose another folder…", onClick = { picker.launch(null) }, icon = Icons.Filled.Folder, kind = if (lib == null) GlossyKind.PRIMARY else GlossyKind.SECONDARY, enabled = busy == null)
                 }
             }
             error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }

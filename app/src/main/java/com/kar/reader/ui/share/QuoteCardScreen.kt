@@ -112,7 +112,7 @@ fun QuoteCardScreen(onBack: () -> Unit, vm: QuoteCardViewModel = hiltViewModel()
                     GlossyOrb(Color(s.top), Modifier.size(44.dp).clickable { style = s }, selected = style == s)
                 }
             }
-            GlossyButton("Share image…", onClick = { bitmap?.let { vm.share(context, it) } }, kind = GlossyKind.GOLD, icon = Icons.Filled.Share, enabled = bitmap != null, modifier = Modifier.widthIn(min = 260.dp))
+            GlossyButton("Share image…", onClick = { bitmap?.let { vm.share(context, it) } }, kind = GlossyKind.ACCENT, icon = Icons.Filled.Share, enabled = bitmap != null, modifier = Modifier.widthIn(min = 260.dp))
             Text("Sent through Android's share menu. KAR READER itself never goes online.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

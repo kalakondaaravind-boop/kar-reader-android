@@ -86,7 +86,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-val ProfileColors = listOf(Color(0xFFE0A33A), Color(0xFF3A66A2), Color(0xFF3E9E62), Color(0xFF8A4FA8), Color(0xFFC0392B), Color(0xFF2E8B8B))
+val ProfileColors = listOf(Color(0xFF1A5CFF), Color(0xFF00A3FF), Color(0xFF12A150), Color(0xFF7C5CFF), Color(0xFFE5484D), Color(0xFF0E9F9A))
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -247,7 +247,7 @@ fun ProfilesScreen(onBack: () -> Unit, vm: SettingsViewModel = hiltViewModel()) 
                 profiles.forEach { p ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { if (p.id != current?.id) { if (p.pinHash == null) vm.switchTo(p, "") {} else pinFor = p } }) {
                         GlossyOrb(ProfileColors[p.colorIndex % ProfileColors.size], Modifier.size(110.dp), selected = p.id == current?.id) {
-                            Text(p.name.take(1).uppercase(), fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 44.sp, color = Color.White)
+                            Text(p.name.take(1).uppercase(), fontWeight = FontWeight.Bold, fontSize = 44.sp, color = Color.White)
                         }
                         Spacer(Modifier.height(10.dp))
                         Text(p.name, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)

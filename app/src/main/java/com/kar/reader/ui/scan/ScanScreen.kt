@@ -166,7 +166,7 @@ fun ScanScreen(onBack: () -> Unit, onSaved: (String) -> Unit, vm: ScanViewModel 
 
     LaunchedEffect(Unit) { if (!hasCamera) permission.launch(Manifest.permission.CAMERA) }
 
-    Column(Modifier.fillMaxSize().background(Color(0xFF12100D))) {
+    Column(Modifier.fillMaxSize().background(Color(0xFF0B1220))) {
         KarTopBar("Scan to PDF", subtitle = "On-device text recognition · works offline", onBack = onBack, backIcon = Icons.AutoMirrored.Filled.ArrowBack)
         Box(Modifier.weight(1f).fillMaxWidth()) {
             val shot = captured
@@ -174,14 +174,14 @@ fun ScanScreen(onBack: () -> Unit, onSaved: (String) -> Unit, vm: ScanViewModel 
                 !hasCamera -> Column(Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("KAR READER needs the camera only while you scan. Photos stay on this device.", color = Color.White)
                     Spacer(Modifier.height(12.dp))
-                    GlossyButton("Allow camera", onClick = { permission.launch(Manifest.permission.CAMERA) }, kind = GlossyKind.GOLD)
+                    GlossyButton("Allow camera", onClick = { permission.launch(Manifest.permission.CAMERA) }, kind = GlossyKind.ACCENT)
                 }
                 shot != null -> CornerAdjuster(shot, onConfirm = { corners -> vm.addPage(shot, corners); captured = null }, onRetake = { shot.recycle(); captured = null })
                 else -> CameraPreview(capture, Modifier.fillMaxSize())
             }
         }
         busy?.let { Column(Modifier.padding(16.dp)) { Text(it, color = Color.White); Spacer(Modifier.height(6.dp)); LinearProgressIndicator(Modifier.fillMaxWidth()) } }
-        error?.let { Text(it, color = Color(0xFFFFB4A8), modifier = Modifier.padding(horizontal = 16.dp)) }
+        error?.let { Text(it, color = Color(0xFFFFD1D3), modifier = Modifier.padding(horizontal = 16.dp)) }
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Row(Modifier.weight(1f).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 vm.pages.forEach { p -> Image(p.asImageBitmap(), null, Modifier.height(56.dp).aspectRatio(p.width.toFloat() / p.height)) }
@@ -197,7 +197,7 @@ fun ScanScreen(onBack: () -> Unit, onSaved: (String) -> Unit, vm: ScanViewModel 
             }
             if (vm.pages.isNotEmpty() && captured == null) {
                 Column(horizontalAlignment = Alignment.End) {
-                    GlossyButton("Done", onClick = { naming = true }, kind = GlossyKind.GOLD, icon = Icons.Filled.Check, enabled = busy == null)
+                    GlossyButton("Done", onClick = { naming = true }, kind = GlossyKind.ACCENT, icon = Icons.Filled.Check, enabled = busy == null)
                     TextButton(onClick = vm::removeLast) { Text("Remove last", color = Color.White) }
                 }
             }
@@ -274,16 +274,16 @@ private fun CornerAdjuster(photo: Bitmap, onConfirm: (List<PointF>) -> Unit, onR
             ) {
                 val pts = corners.map { Offset(it.x * size.width, it.y * size.height) }
                 val path = Path().apply { moveTo(pts[0].x, pts[0].y); pts.drop(1).forEach { lineTo(it.x, it.y) }; close() }
-                drawPath(path, Color(0x22F4C268))
-                drawPath(path, Color(0xFFF4C268), style = Stroke(3.dp.toPx()))
-                pts.forEach { drawCircle(Color(0xFFF4C268), 12.dp.toPx(), it); drawCircle(Color.White, 12.dp.toPx(), it, style = Stroke(2.dp.toPx())) }
+                drawPath(path, Color(0x2200A3FF))
+                drawPath(path, Color(0xFF00A3FF), style = Stroke(3.dp.toPx()))
+                pts.forEach { drawCircle(Color(0xFF00A3FF), 12.dp.toPx(), it); drawCircle(Color.White, 12.dp.toPx(), it, style = Stroke(2.dp.toPx())) }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(8.dp)) {
-            GlossyButton("Retake", onClick = onRetake, kind = GlossyKind.PEARL)
-            GlossyButton("Use page", onClick = { onConfirm(corners.toList()) }, kind = GlossyKind.GOLD, icon = Icons.Filled.Check)
+            GlossyButton("Retake", onClick = onRetake, kind = GlossyKind.SECONDARY)
+            GlossyButton("Use page", onClick = { onConfirm(corners.toList()) }, kind = GlossyKind.ACCENT, icon = Icons.Filled.Check)
         }
-        Text("Tip: lay the page flat in good light.", color = Color(0xFFCFC7B8), fontSize = 12.sp)
+        Text("Tip: lay the page flat in good light.", color = Color(0xFFB4C2D9), fontSize = 12.sp)
     }
 }
 

@@ -160,7 +160,7 @@ fun BackupScreen(onBack: () -> Unit, vm: BackupViewModel = hiltViewModel()) {
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("Restore", fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
                 Text("The file is checked first (format, version and checksum). Restoring runs as one step: if anything fails, nothing changes.", fontSize = 13.sp)
-                GlossyButton("Choose a backup…", onClick = { openLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }, kind = GlossyKind.PEARL, icon = Icons.Filled.Restore, enabled = busy == null)
+                GlossyButton("Choose a backup…", onClick = { openLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }, kind = GlossyKind.SECONDARY, icon = Icons.Filled.Restore, enabled = busy == null)
             }
             busy?.let { Column { Text(it); Spacer(Modifier.height(8.dp)); LinearProgressIndicator(Modifier.fillMaxWidth()) } }
             message?.let { Text(it, color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.SemiBold) }
@@ -268,7 +268,7 @@ fun SyncScreen(onBack: () -> Unit, vm: SyncViewModel = hiltViewModel()) {
                 Text(if (folderName != null) "Folder: $folderName · last synced ${Format.relative(settings.lastSyncAt.takeIf { it > 0 })}" else "No folder chosen yet", fontFamily = FontFamily.Monospace, fontSize = 13.sp)
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    GlossyButton(if (folderName == null) "Choose folder…" else "Change folder…", onClick = { folderLauncher.launch(null) }, kind = GlossyKind.PEARL, icon = Icons.Filled.Folder, compact = true)
+                    GlossyButton(if (folderName == null) "Choose folder…" else "Change folder…", onClick = { folderLauncher.launch(null) }, kind = GlossyKind.SECONDARY, icon = Icons.Filled.Folder, compact = true)
                     if (folderName != null) GlossyButton("Sync now", onClick = vm::syncNow, icon = Icons.Filled.Sync, compact = true, enabled = busy == null)
                 }
                 Text("If both devices changed the same note, the newer text is kept and the other is saved in that note's history.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
@@ -288,7 +288,7 @@ fun SyncScreen(onBack: () -> Unit, vm: SyncViewModel = hiltViewModel()) {
                         Text("On your other device, enter:", fontWeight = FontWeight.SemiBold)
                         Text("Address  ${h.address}", fontFamily = FontFamily.Monospace, fontSize = 18.sp)
                         Text("Code  ${h.code}", fontFamily = FontFamily.Monospace, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                        GlossyButton("Stop", onClick = vm::stopHosting, kind = GlossyKind.PEARL, compact = true)
+                        GlossyButton("Stop", onClick = vm::stopHosting, kind = GlossyKind.SECONDARY, compact = true)
                     } else {
                         GlossyButton("Receive from another device", onClick = vm::startHosting, icon = Icons.Filled.Wifi, enabled = busy == null)
                         Spacer(Modifier.height(12.dp))
