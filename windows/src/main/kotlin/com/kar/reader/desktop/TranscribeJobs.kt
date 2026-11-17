@@ -20,7 +20,7 @@ object TranscriptFiles {
     fun load(id: String): List<Line> = runCatching { AppJson.decodeFromString<List<Line>>(file(id).readText()) }.getOrDefault(emptyList())
     fun save(id: String, lines: List<Line>) = file(id).writeText(AppJson.encodeToString(lines))
     fun deleteForever(state: AppState, t: TranscriptMeta) {
-        state.update { d -> d.copy(transcripts = d.transcripts.filter { it.id != t.id }) }
+        state.update { d -> d.copy(transcripts = d.transcripts.filter { it.id != t.id }, minutes = d.minutes.filter { it.transcriptId != t.id }) }
         file(t.id).delete()
         if (t.audio.isNotBlank()) File(Paths.recordings, t.audio).delete()
     }

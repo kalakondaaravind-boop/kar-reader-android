@@ -161,7 +161,7 @@ jobs:
           [ -d shots ] || exit 0
           git config user.name "github-actions"; git config user.email "actions@users.noreply.github.com"
           rm -rf /tmp/shots && mkdir /tmp/shots && cp shots/*.png /tmp/shots/
-          cd /tmp/shots && git init -q && git checkout -q -b windows-shots && git add . && git commit -qm "screenshots of run ${{ github.run_id }}"
+          cd /tmp/shots && git init -q && git checkout -q -b windows-shots && git add . && git -c user.name=github-actions -c user.email=actions@users.noreply.github.com commit -qm "screenshots of run ${{ github.run_id }}"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" windows-shots
 
       - uses: actions/upload-artifact@v4
