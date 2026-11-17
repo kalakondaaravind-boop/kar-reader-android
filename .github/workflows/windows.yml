@@ -75,6 +75,29 @@ jobs:
           cp "$(dirname "$JARS")"/*.jar windows/libs/
           ls -l windows/libs windows/resources/common/models windows/build/test-audio
 
+      - name: Build the system-audio helper (meeting recording)
+        shell: pwsh
+        run: |
+          $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+          New-Item -ItemType Directory -Force -Path windows/resources/common/tools | Out-Null
+          & $csc /nologo /target:exe /platform:x64 /optimize+ /out:windows/resources/common/tools/kar-loopback.exe windows/native/KarLoopback.cs
+          if ($LASTEXITCODE -ne 0) { throw "csc failed" }
+          Get-Item windows/resources/common/tools/kar-loopback.exe | Format-List Name, Length
+
+      - name: Try the system-audio helper (the runner may have no sound device)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $psi = New-Object System.Diagnostics.ProcessStartInfo
+          $psi.FileName = (Resolve-Path windows/resources/common/tools/kar-loopback.exe).Path
+          $psi.Arguments = "loop-test.wav"
+          $psi.RedirectStandardInput = $true; $psi.RedirectStandardOutput = $true; $psi.UseShellExecute = $false
+          $p = [System.Diagnostics.Process]::Start($psi)
+          $first = $p.StandardOutput.ReadLine()
+          "helper said: $first"
+          if ($first -eq "READY") { Start-Sleep -Seconds 3; $p.StandardInput.WriteLine("stop"); $p.WaitForExit(5000) | Out-Null; (Get-Item loop-test.wav).Length }
+          else { throw "helper did not start: $first" }
+
       - name: Compile
         run: ./gradlew -p windows compileKotlin --stacktrace
 
